@@ -1,0 +1,49 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start">
+            <ion-back-button defaultHref="tabinicio" text=""></ion-back-button>
+        </ion-buttons>
+        <ion-title>Planilla EXCEL</ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content no-padding>
+
+    <div style=" margin-top: 20px;">
+        <ion-card>
+            <ion-card-header>
+                <p>Solo se enviará una planilla a quién ud decida.</p>
+                <ion-card-title>Correos</ion-card-title>
+            </ion-card-header>
+            <ion-card-content style=' padding: 5px '>
+                <ion-list>
+                    <ion-item>
+                        <ion-label position="stacked">Email</ion-label>
+                        <ion-input type="text" [(ngModel)]="emailTo" clearInput=true></ion-input>
+                    </ion-item>
+                    <ion-item>
+                        <ion-label position="stacked">Copia</ion-label>
+                        <ion-input type="text" [(ngModel)]="emailCc" clearInput=true></ion-input>
+                    </ion-item>
+                    <ion-item>
+                        <ion-label position="stacked">Comentarios</ion-label>
+                        <ion-textarea rows="2" [(ngModel)]="nombreCli" clearInput=true></ion-textarea>
+                    </ion-item>
+                </ion-list>
+                <ion-button style="margin: 15px;" (click)="enviarviamail()" size="small" expand="block">Enviar planilla Excel</ion-button>
+            </ion-card-content>
+        </ion-card>
+    </div>
+
+    <ion-progress-bar *ngIf=" lprogress " type="indeterminate"></ion-progress-bar>
+
+    <ion-list *ngIf=" modo === 'marcar_productos' ">
+        <ion-item *ngFor="let item of datos.ItemCotizado">
+            <ion-label>
+                <p>{{ item.descrip }}</p>
+                <h2>{{ item.codigo }}</h2>
+            </ion-label>
+        </ion-item>
+    </ion-list>
+
+</ion-content>

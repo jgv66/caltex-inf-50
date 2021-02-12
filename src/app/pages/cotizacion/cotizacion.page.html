@@ -1,0 +1,95 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start">
+            <ion-back-button defaultHref="tabinicio" text=""></ion-back-button>
+        </ion-buttons>
+        <ion-title>Itemes a Cotizar</ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content no-padding>
+
+    <div *ngIf=" datos.ItemCotizado.length > 0 " style=" margin-top: 20px;">
+        <ion-card>
+            <ion-card-header>
+                <p *ngIf=" datos.ItemCotizado.length > 0 ">Siempre será enviada una copia al correo del vendedor.</p>
+                <ion-card-title>Correos</ion-card-title>
+            </ion-card-header>
+            <ion-card-content style=' padding: 5px '>
+                <ion-list>
+                    <ion-item>
+                        <ion-label position="stacked">Nombre del cliente</ion-label>
+                        <ion-input type="text" name="nombreCli" [(ngModel)]="nombreCli" clearInput=true></ion-input>
+                    </ion-item>
+                    <ion-item>
+                        <ion-label position="stacked">Email del cliente</ion-label>
+                        <ion-input type="text" name="emailTo" [(ngModel)]="emailTo" clearInput=true></ion-input>
+                    </ion-item>
+                    <ion-item>
+                        <ion-label position="stacked">Copia</ion-label>
+                        <ion-input type="text" name="emailCc" [(ngModel)]="emailCc" clearInput=true></ion-input>
+                    </ion-item>
+                    <ion-item>
+                        <ion-textarea placeholder="observaciones..." rows="3" [(ngModel)]="emailObs"></ion-textarea>
+                    </ion-item>
+
+                </ion-list>
+                <ion-button style="margin: 15px;" (click)="enviarviamail()" size="small" expand="block">Enviar cotización vía email</ion-button>
+            </ion-card-content>
+        </ion-card>
+    </div>
+
+    <ion-list no-padding #lista *ngIf=" datos.ItemCotizado.length > 0 ">
+
+        <ion-item-sliding *ngFor="let producto of datos.ItemCotizado">
+            <ion-item>
+                <ion-grid no-padding>
+                    <ion-row class="letra85">
+                        <ion-col size="7">
+                            <ion-label text-left>
+                                <h2><b>{{ producto.codigo }}</b></h2>
+                            </ion-label>
+                        </ion-col>
+                        <ion-col size="5">
+                            <ion-badge color="danger" item-end>${{ producto.precio | number }} </ion-badge>
+                        </ion-col>
+                    </ion-row>
+                    <ion-row class="letra85">
+                        <ion-col>
+                            <ion-label text-left>
+                                <p>{{ producto.descrip.trim() }}</p>
+                            </ion-label>
+                        </ion-col>
+                    </ion-row>
+                    <ion-row class="letra70">
+                        <ion-col size="4">
+                            <ion-label text-left>
+                                Saldo : {{ producto.saldo | number }}
+                            </ion-label>
+                        </ion-col>
+                        <ion-col size="4">
+                            <ion-label text-left>
+                                Curva : {{ producto.rtu | number }}
+                            </ion-label>
+                        </ion-col>
+                        <ion-col size="4">
+                            <ion-label text-left>
+                                Tareas : {{ ((producto.saldo
+                                <=0)?0:(producto.saldo/producto.rtu)) | number: '1.0-0'}} </ion-label>
+                        </ion-col>
+                    </ion-row>
+
+                </ion-grid>
+            </ion-item>
+
+            <ion-item-options side="end">
+                <ion-item-option color="danger" (click)="quitarDeCotiz(producto)">
+                    <ion-icon slot="icon-only" name="trash"></ion-icon>
+                </ion-item-option>
+            </ion-item-options>
+
+        </ion-item-sliding>
+
+    </ion-list>
+
+</ion-content>

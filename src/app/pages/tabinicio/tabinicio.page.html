@@ -1,0 +1,95 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-title text-left>{{ nombreEmpresa }}</ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+    <ion-grid no-padding>
+        <ion-row align-items-center>
+            <ion-col size="10" class="x1">
+                <ion-list style=" margin: 1px;">
+                    <ion-item>
+                        <ion-label>Código Téc.: </ion-label>
+                        <ion-input type="text" name="codproducto" [(ngModel)]="codproducto" clearInput=true></ion-input>
+                    </ion-item>
+                    <ion-item>
+                        <ion-label>Descripción : </ion-label>
+                        <ion-input type="text" name="descripcion" [(ngModel)]="descripcion" clearInput=true></ion-input>
+                    </ion-item>
+                    <ion-item *ngIf=" filtrosVarios ">
+                        <ion-label>Temporada...</ion-label>
+                        <ion-select [(ngModel)]='codRubros' interface="alert" multiple="true" placeholder="Seleccione Rubro(s)...">
+                            <ion-select-option *ngFor="let ru of rubros" [value]="ru.rubro">{{ ru.descripcion }}</ion-select-option>
+                        </ion-select>
+                    </ion-item>
+                    <ion-item *ngIf=" filtrosVarios ">
+                        <ion-label>Marcas...</ion-label>
+                        <ion-select [(ngModel)]='codMarcas' interface="action-sheet" multiple="true" placeholder="Seleccione una marca...">
+                            <ion-select-option *ngFor="let mar of marcas" [value]="mar.marca">{{ mar.descripcion }}</ion-select-option>
+                        </ion-select>
+                    </ion-item>
+                    <ion-item *ngIf=" filtrosVarios ">
+                        <ion-label>Super Familias...</ion-label>
+                        <ion-select [(ngModel)]='codSuperFam' interface="alert" multiple="true" placeholder="Seleccione Super-familia(s)...">
+                            <ion-select-option *ngFor="let sf of superfamilias" [value]="sf.superfam">{{ sf.nombresf }}</ion-select-option>
+                        </ion-select>
+                    </ion-item>
+                </ion-list>
+            </ion-col>
+            <ion-col size="2">
+                <ion-button shape="round" color="danger" (click)="aBuscarProductos( 1 )">
+                    <ion-icon slot="icon-only" name="search"></ion-icon>
+                </ion-button>
+            </ion-col>
+        </ion-row>
+    </ion-grid>
+
+    <ion-button *ngIf=" modocoti === true " (click)="modocotizacion()" color="danger" style="margin: 15px;" size="small" expand="block">
+        MODO COTIZACION: ACTIVO
+    </ion-button>
+
+    <ion-button *ngIf=" modoexcel === true " (click)="enviarExcel()" color="success" style="margin: 15px;" size="small" expand="block">
+        MODO EXCEL : {{ formaexcel }}
+    </ion-button>
+
+    <!-- aqui de despliegan los datos -->
+    <app-grillastock *ngIf=" usuario " [listaProductos]="listaProductos" [modocoti]="modocoti" [modoexcel]="modoexcel" [empresa]="usuario.EMPRESA"></app-grillastock>
+
+    <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+        <ion-fab-button color="danger">
+            <ion-icon name="medkit"></ion-icon>
+        </ion-fab-button>
+        <ion-fab-list side="top">
+            <ion-fab-button (click)="masOpciones()" [color]=" filtrosVarios ? 'danger' : 'primary' ">
+                <ion-icon name="flash"> </ion-icon>
+            </ion-fab-button>
+            <ion-fab-button (click)="filtros()" color="primary">
+                <ion-icon name="options"> </ion-icon>
+            </ion-fab-button>
+            <ion-fab-button (click)="orden()" color="primary">
+                <ion-icon name="funnel"> </ion-icon>
+            </ion-fab-button>
+            <ion-fab-button (click)="modocotizacion()" [color]=" modocoti ? 'danger' : 'primary' ">
+                <ion-icon name="basket"> </ion-icon>
+            </ion-fab-button>
+            <ion-fab-button (click)="marcarExcel()" color="primary" *ngIf="usuario?.EMPRESA !== '04'">
+                <ion-icon name="attach"> </ion-icon>
+            </ion-fab-button>
+            <ion-fab-button (click)="scrollToTop()" color="primary">
+                <ion-icon name="arrow-up"></ion-icon>
+            </ion-fab-button>
+        </ion-fab-list>
+        <ion-fab-list side="end" *ngIf=" lhaycotiz() === true ">
+            <ion-fab-button (click)="ItemesCotizados()" color="primary">
+                <ion-icon name="cart"></ion-icon>
+            </ion-fab-button>
+        </ion-fab-list>
+    </ion-fab>
+
+    <ion-infinite-scroll (ionInfinite)="masDatos($event)" *ngIf=" lScrollInfinito === true ">
+        <ion-infinite-scroll-content loading-spinner="dots" loadingText="Buscando más datos..."></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+
+</ion-content>

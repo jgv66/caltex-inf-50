@@ -1,0 +1,23 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start">
+            <ion-back-button defaultHref="\tabinicio" text=""></ion-back-button>
+        </ion-buttons>
+        <ion-title>Datos adicionales</ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content no-padding>
+
+    <!-- fab placed to the top end -->
+    <ion-fab vertical="top" horizontal="end" slot="fixed">
+
+        <ion-fab-button (click)="addCotiz()" size="small" color="danger">
+            <ion-icon name="add"></ion-icon>
+        </ion-fab-button>
+
+    </ion-fab>
+
+    <app-vistaproducto [producto]="producto" [occ]="occ"></app-vistaproducto>
+
+</ion-content>

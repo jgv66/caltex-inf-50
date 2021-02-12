@@ -1,0 +1,49 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start">
+            <ion-back-button>Salir</ion-back-button>
+        </ion-buttons>
+        <ion-title>Telas</ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content padding>
+
+    <ion-card>
+
+        <ion-card-header>
+            <H1>Datos obligatorios</H1>
+        </ion-card-header>
+
+        <ion-card-content>
+
+            <ion-list>
+                <ion-item>
+                    <ion-label position="fixed">Metros</ion-label>
+                    <ion-input type="number" [(ngModel)]="metros" clearInput=true></ion-input>
+                </ion-item>
+                <ion-item>
+                    <ion-label position="fixed">Rollos</ion-label>
+                    <ion-input type="number" [(ngModel)]="rollos" clearInput=true></ion-input>
+                </ion-item>
+                <ion-item>
+                    <ion-label position="fixed">Precio x Mt</ion-label>
+                    <ion-input type="number" [(ngModel)]="precioxmetro" clearInput=true></ion-input>
+                </ion-item>
+
+                <ion-row>
+                    <ion-col size="4">
+                        <ion-button color="secondary" size="small" expand="block" (click)="salir()">Salir</ion-button>
+                    </ion-col>
+                    <ion-col size="8">
+                        <ion-button color="primary" size="small" expand="block" (click)="grabar()">Grabar datos</ion-button>
+                    </ion-col>
+                </ion-row>
+
+            </ion-list>
+
+        </ion-card-content>
+
+    </ion-card>
+
+</ion-content>

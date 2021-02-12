@@ -1,0 +1,51 @@
+
+<ion-grid no-padding>
+
+    <ion-row class="keven" *ngIf=" empresa !== '04' ">
+        <ion-col size="3"><ion-label>Código-Téc.</ion-label></ion-col>
+        <ion-col size="5"><ion-label>Descripción</ion-label></ion-col>
+        <ion-col size="1"><ion-label>Bod        </ion-label></ion-col>
+        <ion-col size="1"><ion-label>NVV        </ion-label></ion-col>
+        <ion-col size="1"><ion-label>Occ        </ion-label></ion-col>
+        <ion-col size="1"><ion-label>SLD        </ion-label></ion-col>
+    </ion-row>
+
+    <ion-row class="kodd" *ngIf=" empresa === '04' ">
+        <ion-col size="4"><ion-label>Código-Técnico </ion-label></ion-col>
+        <ion-col size="2"><ion-label>Bodega         </ion-label></ion-col>
+        <ion-col size="2"><ion-label>NVV            </ion-label></ion-col>
+        <ion-col size="2"><ion-label>Occ            </ion-label></ion-col>
+        <ion-col size="2"><ion-label>Saldo          </ion-label></ion-col>
+        <ion-col size="12"><ion-label>Descripción</ion-label></ion-col>
+    </ion-row>
+    <!-- <ion-row class="keven" *ngIf=" empresa === '04' ">
+    </ion-row> -->
+            
+</ion-grid>
+
+<ion-grid no-padding *ngIf=" empresa !== '04' ">
+    <ion-row *ngFor="let producto of listaProductos; let i = index" 
+            (click)="informacion( producto )"
+            [ngClass]="{ 'keven': (i % 2 === 0), 'kodd': !(i % 2 === 0)  }">
+        <ion-col size="3"><ion-label>{{ producto.codigotec   }}</ion-label></ion-col>
+        <ion-col size="5"><ion-label>{{ producto.descripcion }}</ion-label></ion-col>
+        <ion-col size="1"><ion-label>{{ producto.fisico_ud1    | number }}</ion-label></ion-col>
+        <ion-col size="1"><ion-label>{{ producto.pendiente_ud1 | number }}</ion-label></ion-col>
+        <ion-col size="1"><ion-label>{{ producto.porllegar_ud1 | number }}</ion-label></ion-col>
+        <ion-col size="1"><ion-label>{{ producto.saldo_ud1     | number }}</ion-label></ion-col>
+    </ion-row>
+</ion-grid>
+
+<ion-grid no-padding *ngIf=" empresa === '04' ">
+    <ion-row *ngFor="let producto of listaProductos; let i = index" 
+            (click)="informacion( producto )"
+            [ngClass]="{ 'keven': (i % 2 === 0), 'kodd': !(i % 2 === 0)  }">
+        <ion-col size="4"><ion-label>{{ producto.codigotec   }}</ion-label></ion-col>
+        <ion-col size="2"><ion-label>{{ producto.fisico_ud1    | number:"1.0-0" }}</ion-label></ion-col>
+        <ion-col size="2"><ion-label>{{ producto.pendiente_ud1 | number:"1.0-0" }}</ion-label></ion-col>
+        <ion-col size="2"><ion-label>{{ producto.porllegar_ud1 | number:"1.0-0" }}</ion-label></ion-col>
+        <ion-col size="2"><ion-label>{{ producto.saldo_ud1     | number:"1.0-0" }}</ion-label></ion-col>
+        <ion-col size="12"><ion-label style=" font-style: italic">{{ producto.descripcion }}</ion-label></ion-col>
+    </ion-row>
+</ion-grid>
+

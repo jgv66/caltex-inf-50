@@ -1,0 +1,105 @@
+
+<ion-card *ngIf=" producto ">
+
+    <ion-card-header>
+        <ion-card-title>
+            <h3>{{ producto.codigotec }}</h3>
+            <p>{{ producto.descripcion }}</p>
+        </ion-card-title> 
+    </ion-card-header>
+
+    <ion-img src="http://www.grupocaltex.cl/imagenes/fotos18/{{ producto.codigoimagen }}.jpg" 
+             ionError=" this.src='assets/no_img.jpg' ">
+    </ion-img>
+    <!-- <img  src="//www.grupocaltex.cl/imagenes/fotos18/{{ producto.codigoimagen }}.jpg" 
+          onerror=" this.src='assets/no_img.jpg' " /> -->
+
+    <ion-card-content style=' padding: 5px; '>
+
+        <ion-grid>
+
+            <ion-row>
+                <ion-col>
+
+                    <ion-row>
+                        <ion-col text-right size="5">
+                            <p>Tipo Venta : </p> 
+                        </ion-col>
+                        <ion-col text-left size="7" *ngIf=" producto.concompras === true ">
+                            <ion-badge color="danger" item-end >De Futuro</ion-badge>
+                        </ion-col>
+                        <ion-col text-left size="7" *ngIf=" producto.concompras === false ">
+                            <ion-badge color="primary" item-end >De Stock</ion-badge>
+                        </ion-col>
+                    </ion-row>
+
+                    <ion-row>
+                        <ion-col text-right size="5">
+                            <p>Bod.({{ producto.bodega }}) : </p> 
+                        </ion-col>
+                        <ion-col text-left text-wrap size="7">
+                          <p><b>{{ producto.nombrebodega }}</b></p>
+                        </ion-col>
+                    </ion-row>
+
+                    <ion-row>
+                        <ion-col text-right size="5">
+                            <p>{{ producto.tipolista }} (<b>{{ producto.listaprecio }}</b>) :</p>
+                        </ion-col>
+                        <ion-col text-left size="7">
+                            <ion-badge color="danger" item-end >${{ producto.precio | number }} ({{ producto.unidad1 }})</ion-badge>
+                        </ion-col>
+                    </ion-row>    
+
+                    <ion-row>
+                        <table border="1" width="100%" border-collapse="collapse">
+                            <tr>
+                                <td align="center"> BOD </td>
+                                <td align="center"> NVV </td>
+                                <td align="center"> OCC </td>  
+                                <td align="center"> SLD </td>  
+                                <td align="center"> CUR </td>  
+                                <td align="center"> TAR </td>  
+                            </tr>                    
+                            <tr>
+                                <td align="center"><b>{{ producto.fisico_ud1    | number }}</b></td>
+                                <td align="center"><b>{{ producto.pendiente_ud1 | number }}</b></td>
+                                <td align="center"><b>{{ producto.porllegar_ud1 | number }}</b></td>  
+                                <td align="center"><b>{{ producto.saldo_ud1     | number }}</b></td>  
+                                <td align="center"><b>{{ producto.rtu           | number }}</b></td>  
+                                <td align="center"><b>{{ ((producto.saldo_ud1<=0)?0:(producto.saldo_ud1/producto.rtu)) | number:'1.0-0'}}</b></td>  
+                            </tr>
+                        </table>
+                    </ion-row>
+                    
+                  <ion-item *ngIf=" occ ">
+                      <ion-label>Ordenes de Compra</ion-label>
+                  </ion-item>
+                  <ion-row *ngIf=" occ ">
+                      <table border="1" width="100%" border-collapse="collapse" style="font-size: 80%">
+                          <tr>
+                              <td align="center"> OCC </td>
+                              <td align="center"> Cant. </td>
+                              <td align="center"> Emisión </td>  
+                              <td align="center"> Llegada </td>  
+                              <td align="center"> Días </td>  
+                          </tr>                    
+                          <tr *ngFor="let orden of occ">
+                              <td align="center"><b>{{ orden.numero }}</b></td>
+                              <td align="center"><b>{{ orden.pendiente_ud1 | number }}</b></td>
+                              <td align="center"><b>{{ orden.fechaemision  | date :'dd-MM-yyyy' }}</b></td>  
+                              <td align="center"><b>{{ orden.fechallegada  | date :'dd-MM-yyyy' }}</b></td>  
+                              <td align="center"><b>{{ orden.dias          | number }}</b></td>  
+                          </tr>
+                      </table>
+                  </ion-row>
+
+                </ion-col>
+                
+            </ion-row>
+
+        </ion-grid>
+
+    </ion-card-content>
+
+</ion-card>        

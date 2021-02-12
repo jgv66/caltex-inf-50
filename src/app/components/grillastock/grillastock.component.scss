@@ -1,0 +1,52 @@
+ion-row.keven {
+    background-color: var( --ion-color-keven);
+}
+ion-row.kodd {
+    background-color: var( --ion-color-kodd);
+}
+
+ion-row:nth-child(even){
+    background-color: var(--ion-color-keven);
+    font-size: 75%; 
+    ion-label {
+        color: var(--ion-color-primary);
+    }
+
+}
+ion-row:nth-child(odd){
+    font-size: 75%; 
+    ion-label {
+        color: var(--ion-color-dark);
+    }
+}
+
+ion-item {
+    font-size: 1.5em; 
+}
+ion-col {
+    padding-right: 0em;
+}
+
+table {
+    font-family: Verdana;
+    font-size: 14px;
+    border-collapse: collapse;
+    width: 600px;
+}
+  
+td, th {
+    padding: 10px;
+    text-align: left;
+    margin: 0;
+}
+  
+tbody tr:nth-child(2n) {
+    background-color: #eee;
+}
+  
+th {
+    position: sticky;
+    top: 0;
+    background-color: #333;
+    color: white;
+}
