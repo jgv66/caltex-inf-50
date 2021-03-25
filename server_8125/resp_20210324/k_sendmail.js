@@ -1,15 +1,11 @@
 //
 const fs = require('fs');
 //
-const claves = require('./mailgun.key');
-const DOMAIN = claves.DOMAIN;
-const api_key = claves.API_KEY;
-//
-// const mailgun = require("mailgun-js")({ apiKey: api_key, domain: DOMAIN });
-const nodemailer = require('nodemailer'); // email sender function 
-
+const DOMAIN = 'mailer.kinetik.cl';
+const api_key = 'df3843228fab5e3da44a6332c83a203b-4de08e90-4404475b';
+const mailgun = require("mailgun-js")({ apiKey: api_key, domain: DOMAIN });
 // configuracion de mail-gun
-const SENDER_INTERNO = claves.SENDER;
+const SENDER_INTERNO = 'kinetik@grupocaltex.cl';
 const COPIA_INTERNA = 'lsalinas@grupocaltex.cl';
 const COPIA_TELAS = 'acuminao@grupocaltex.cl';
 //
@@ -22,87 +18,58 @@ module.exports = {
         }
         const cSu = (empresa === '04') ? 'Información de Pre-Venta' : 'Cotización Grupo Caltex';
         //
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
-
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
-            auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
-            },
-            debug: false, // show debug output
-            logger: false // log information in console
-        });
-        // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
+        const data = {
+            from: `GrupoCaltex <${SENDER_INTERNO}>`,
             to: mailList.to,
-            // cc: cCc, // 'jogv66@gmail.com',
-            cc: [{ address: COPIA_INTERNA }, mailList.cc],
+            cc: ((mailList.cc !== '') ? mailList.cc + ',' + COPIA_INTERNA : COPIA_INTERNA),
             subject: cSu,
             html: htmlBody
         };
-        // enviar el correo
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log('error en sendmail->', error);
-                return false;
-            } else {
-                console.log("Email enviado a -> ", mailList.to);
-                console.log("Email con copia -> ", ((mailList.cc !== '') ? mailList.cc : COPIA_INTERNA));
-                return true;
-            }
-        });
-        // 
+        console.log('data->', data);
+        //
+        mailgun.messages()
+            .send(data, function(error, body) {
+                if (error) {
+                    console.log('error en mailgun.messages().send()->', error);
+                    return false;
+                } else {
+                    console.log("Email enviado a -> ", mailList.to);
+                    console.log("Email con copia -> ", COPIA_INTERNA, mailList.cc);
+                    return true;
+                }
+            });
     },
 
-    enCo2: function(res, mailList, htmlBody, cfile, pathfile, empresa) {
-        // console.log('mailList->', mailList);
+    enCo2: function(mailList, htmlBody, cfile, pathfile, empresa) {
         //
         cSu = (empresa === '04') ? 'Detalle de Pre-Venta' : 'Cotización Grupo Caltex';
-        cTo = mailList.to;
-        cCc = mailList.cc;
         //
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
-            auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
-            },
-            debug: false, // show debug output
-            logger: false // log information in console
-        });
-        // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
-            to: cTo,
-            cc: (empresa === '04') ? [cCc, { address: COPIA_TELAS }] : [cCc, { address: COPIA_INTERNA }],
+        const data = {
+            from: `GrupoCaltex <${SENDER_INTERNO}>`,
+            to: mailList.to,
+            cc: mailList.cc,
             subject: cSu,
             html: htmlBody,
-            attachments: [{ filename: cfile, path: pathfile + '/' + cfile }]
+            attachment: pathfile + '/' + cfile
         };
-        // enviar el correo
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log('error en sendmail->', error);
-                res.json({ resultado: 'error', numero: 'Correo no se envió' });
-                return;
-            } else {
-                console.log("Email enviado a -> ", cTo);
-                console.log("Email con copia -> ", cCc);
-                res.json({ resultado: 'ok', numero: 'ENVIADO' });
-                return;
-            }
-        });
-        // 
+        console.log('data->', data);
+        //
+        mailgun.messages()
+            .send(data, function(error, body) {
+                if (error) {
+                    console.log('error en mailgun.enCo2()->', error);
+                    return false;
+                    // res.json({ resultado: 'error', numero: error });
+                } else {
+                    console.log("Email enviado a -> ", mailList.to);
+                    console.log("Email con copia -> ", COPIA_INTERNA, mailList.cc);
+                    return true;
+                    // res.json({ resultado: 'ok', numero: 'Enviado' });
+                }
+            });
     },
 
-    enviarCorreoExcel: (res, mailList, cfile) => {
+    enviarCorreoExcel: (res, mailList, filename) => {
         //
         const xhoy = new Date();
         const anno = xhoy.getFullYear().toString();
@@ -115,42 +82,29 @@ module.exports = {
         if (mailList.emailTo === '' || mailList.emailTo == undefined) {
             mailList.emailTo = mailList.emailCc;
         }
-
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
-            auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
-            },
-            debug: false, // show debug output
-            logger: false // log information in console
-        });
-        // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
+        //
+        const data = {
+            from: `GrupoCaltex <${SENDER_INTERNO}>`,
             to: mailList.emailTo,
-            cc: (mailList.emailCc !== '' && mailList.emailCc !== undefined && mailList.emailCc !== 'undefined') ? mailList.emailCc : undefined,
+            cc: (mailList.emailCc !== '') ? mailList.emailCc : undefined,
             subject: 'Planillas de Stock al ' + dia + '-' + mes + '-' + anno,
             html: 'Adjunto Planilla de Stock al <b>' + dia + '-' + mes + '-' + anno + ' - ' + hora + ':' + minu + ' horas</b><br>Comentarios: ' + mailList.nombreCli,
-            attachments: [{ filename: cfile, path: cfile }]
+            attachment: filename
         };
-        // enviar el correo
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log('error en sendmail->', error);
-                res.json({ resultado: 'error', numero: 'NO Enviado' });
-                return;
-            } else {
-                console.log("Email enviado a -> ", mailList.emailTo);
-                console.log("Email con copia -> ", ((mailList.emailCc !== '' && mailList.emailCc !== undefined && mailList.emailCc !== 'undefined') ? mailList.emailCc : undefined));
-                res.json({ resultado: 'ok', numero: 'Enviado' });
-                return;
-            }
-        });
-        // 
+        console.log('data->', data);
+        //
+        mailgun.messages()
+            .send(data, function(error, body) {
+                if (error) {
+                    console.log('error en mailgun.enCo2()->', error);
+                    res.json({ resultado: 'error', numero: error });
+                } else {
+                    console.log("Email enviado a -> ", mailList.emailTo);
+                    console.log("Email con copia -> ", mailList.emailCc);
+                    res.json({ resultado: 'ok', numero: 'Enviado' });
+                }
+            });
+        //
     },
 
     componeBody: function(sql, id) {

@@ -369,7 +369,13 @@ app.post('/encorr2',
         // 
         htmlBody = _correos.cotizcuerpo(xnombre, xnombrecli, empresa, xemailobs) + lineas + _correos.cotizfin();
         // 
-        await _correos.enCo2(res, mailList, htmlBody, cfile, pathfile, empresa);
+        respuestaCorreo = await _correos.enCo2(mailList, htmlBody, cfile, pathfile, empresa);
+        //
+        if (respuestaCorreo === true) {
+            res.json({ resultado: 'ok', numero: 'ENVIADO' });
+        } else {
+            res.json({ resultado: 'error', numero: 'Correo no se envió' });
+        }
         //
     });
 
@@ -774,8 +780,8 @@ app.post('/enviarDeuda',
         htmlBody = _correos.deudaHeader(cliente) + lineas + _correos.deudaFooter();
         let mailList = { cc: xCc, to: xTo };
         await _correos.enviarCorreo(mailList, htmlBody, '');
-        res.json({ resultado: 'ok', numero: 'Enviado' });
         //
+        res.json({ resultado: 'ok', numero: 'Enviado' });
     });
 
 const generateUUID = () => {

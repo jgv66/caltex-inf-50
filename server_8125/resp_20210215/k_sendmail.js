@@ -1,46 +1,89 @@
-//
-const fs = require('fs');
-//
-const claves = require('./mailgun.key');
-const DOMAIN = claves.DOMAIN;
-const api_key = claves.API_KEY;
-//
-// const mailgun = require("mailgun-js")({ apiKey: api_key, domain: DOMAIN });
-const nodemailer = require('nodemailer'); // email sender function 
+const mailgun = require("mailgun-js");
+const DOMAIN = 'sandbox954bd8f7f0134a9c9eccebd014c08e75.mailgun.org';
+const api_key = 'df3843228fab5e3da44a6332c83a203b-4de08e90-4404475b';
 
-// configuracion de mail-gun
-const SENDER_INTERNO = claves.SENDER;
-const COPIA_INTERNA = 'lsalinas@grupocaltex.cl';
-const COPIA_TELAS = 'acuminao@grupocaltex.cl';
-//
 module.exports = {
     // cada funncion se separa por comas  
-    enviarCorreo: (mailList, htmlBody, empresa) => {
-        // si 'to' viene vacio
-        if (mailList.to === '') {
-            mailList.to = ((mailList.cc !== '') ? mailList.cc : COPIA_INTERNA);
-        }
-        const cSu = (empresa === '04') ? 'Información de Pre-Venta' : 'Cotización Grupo Caltex';
+    componeBody: function(sql, id) {
+        //  
+        var request = new sql.Request();
+        request.input('id', sql.Int, id);
+        return request.execute("ksp_TraeDetalleK");
         //
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
+    },
 
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
+    enviarCorreo: (res, nodemailer, mailList, htmlBody) => {
+        //
+        sender = 'postmaster@sandbox954bd8f7f0134a9c9eccebd014c08e75.mailgun.org';
+        psswrd = '36aff41967ac82e539b5df4a5d1ee96b-4de08e90-2d01ea0f';
+        //
+        cTo = mailList[0].to;
+        cCc = mailList[0].cc;
+        cSu = (empresa === '04') ? 'Información de Pre-Venta' : 'Cotización Grupo Caltex';
+        // datos del enviador
+        var transporter = nodemailer.createTransport({
+            host: 'smtp.mailgun.org',
+            port: 587,
+            secure: false,
             auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
+                user: sender,
+                pass: psswrd
             },
-            debug: false, // show debug output
-            logger: false // log information in console
+            tls: { rejectUnauthorized: false },
+            // logger: true,
+            // debug: true
         });
         // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
-            to: mailList.to,
-            // cc: cCc, // 'jogv66@gmail.com',
-            cc: [{ address: COPIA_INTERNA }, mailList.cc],
+        var mailOptions = {
+            from: { name: "GrupoCaltex", address: 'kinetik@grupocaltex.cl' },
+            to: cTo,
+            // cc: cCc, // [{ name: "julio gonzalez 👻", address: 'jogv66@gmail.com'}, 'pedroalfonsofrancisco@gmail.com' ],
+            cc: [{ name: "Lucrecia Salinas S.", address: 'lsalinas@grupocaltex.cl' }, cCc],
+            subject: cSu,
+            html: htmlBody
+        };
+        //
+        // enviar el correo
+        transporter.sendMail(mailOptions, function(error, info) {
+            if (error) {
+                console.log('error en sendmail->', error);
+                res.json({ resultado: 'error', numero: error });
+            } else {
+                console.log("Email enviado a -> ", cTo);
+                console.log("Email con copia -> ", cCc);
+                res.json({ resultado: 'ok', numero: 'Enviado' });
+            }
+        });
+    },
+
+    enviarCotizacion: (res, nodemailer, mailList, htmlBody, empresa) => {
+        //
+        sender = 'postmaster@sandbox954bd8f7f0134a9c9eccebd014c08e75.mailgun.org';
+        psswrd = '36aff41967ac82e539b5df4a5d1ee96b-4de08e90-2d01ea0f';
+        //
+        cTo = mailList[0].to;
+        cCc = mailList[0].cc;
+        cSu = (empresa === '04') ? 'Información de Pre-Venta' : 'Cotización Grupo Caltex';
+        // datos del enviador
+        var transporter = nodemailer.createTransport({
+            host: 'smtp.mailgun.org',
+            port: 587,
+            secure: false,
+            auth: {
+                user: sender,
+                pass: psswrd
+            },
+            tls: { rejectUnauthorized: false },
+            // logger: true,
+            // debug: true
+        });
+        console.log('transporter', transporter);
+        // opciones del correo
+        var mailOptions = {
+            from: { name: "GrupoCaltex", address: 'kinetik@grupocaltex.cl' },
+            to: cTo,
+            // cc: cCc, // [{ name: "julio gonzalez 👻", address: 'jogv66@gmail.com'}, 'pedroalfonsofrancisco@gmail.com' ],
+            cc: [{ name: "Lucrecia Salinas S.", address: 'lsalinas@grupocaltex.cl' }, cCc],
             subject: cSu,
             html: htmlBody
         };
@@ -48,40 +91,42 @@ module.exports = {
         transporter.sendMail(mailOptions, function(error, info) {
             if (error) {
                 console.log('error en sendmail->', error);
-                return false;
+                return;
             } else {
-                console.log("Email enviado a -> ", mailList.to);
-                console.log("Email con copia -> ", ((mailList.cc !== '') ? mailList.cc : COPIA_INTERNA));
-                return true;
+                console.log("Email enviado a -> ", cTo);
+                console.log("Email con copia -> ", cCc);
+                return;
             }
         });
-        // 
     },
 
-    enCo2: function(res, mailList, htmlBody, cfile, pathfile, empresa) {
-        // console.log('mailList->', mailList);
+    enCo2: function(res, nodemailer, mailList, htmlBody, cfile, pathfile, fs, empresa) {
         //
+        sender = 'postmaster@sandbox954bd8f7f0134a9c9eccebd014c08e75.mailgun.org';
+        psswrd = '36aff41967ac82e539b5df4a5d1ee96b-4de08e90-2d01ea0f';
+        //
+        cTo = mailList[0].to;
+        cCc = mailList[0].cc;
         cSu = (empresa === '04') ? 'Detalle de Pre-Venta' : 'Cotización Grupo Caltex';
-        cTo = mailList.to;
-        cCc = mailList.cc;
         //
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
+        var transporter = nodemailer.createTransport({
+            host: 'smtp.mailgun.org',
+            port: 587,
+            secure: false,
             auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
+                user: sender,
+                pass: psswrd
             },
-            debug: false, // show debug output
-            logger: false // log information in console
+            tls: { rejectUnauthorized: false },
+            // logger: true,
+            // debug: true
         });
         // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
+        var mailOptions = {
+            // from: { name: "GrupoCaltex", address: sender },
+            from: { name: "GrupoCaltex", address: 'kinetik@grupocaltex.cl' },
             to: cTo,
-            cc: (empresa === '04') ? [cCc, { address: COPIA_TELAS }] : [cCc, { address: COPIA_INTERNA }],
+            // cc: (empresa === '04') ? [cCc, { name: "Andres Cuminao", address: 'acuminao@grupocaltex.cl' }] : [{ name: "Lucrecia Salinas S.", address: 'lsalinas@grupocaltex.cl' }, cCc],
             subject: cSu,
             html: htmlBody,
             attachments: [{ filename: cfile, path: pathfile + '/' + cfile }]
@@ -90,76 +135,15 @@ module.exports = {
         transporter.sendMail(mailOptions, function(error, info) {
             if (error) {
                 console.log('error en sendmail->', error);
-                res.json({ resultado: 'error', numero: 'Correo no se envió' });
                 return;
             } else {
-                console.log("Email enviado a -> ", cTo);
-                console.log("Email con copia -> ", cCc);
-                res.json({ resultado: 'ok', numero: 'ENVIADO' });
+                console.log("Email enviado a -> ", mailList[0].to);
+                fs.unlinkSync(pathfile + '/' + cfile);
                 return;
             }
         });
-        // 
     },
 
-    enviarCorreoExcel: (res, mailList, cfile) => {
-        //
-        const xhoy = new Date();
-        const anno = xhoy.getFullYear().toString();
-        const mes = (xhoy.getMonth() + 1).toString();
-        const dia = xhoy.getDate().toString();
-        const hora = xhoy.getHours().toString();
-        const minu = xhoy.getMinutes().toString();
-        //
-        // si no tiene correo se envia al vendedor
-        if (mailList.emailTo === '' || mailList.emailTo == undefined) {
-            mailList.emailTo = mailList.emailCc;
-        }
-
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
-            auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
-            },
-            debug: false, // show debug output
-            logger: false // log information in console
-        });
-        // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
-            to: mailList.emailTo,
-            cc: (mailList.emailCc !== '' && mailList.emailCc !== undefined && mailList.emailCc !== 'undefined') ? mailList.emailCc : undefined,
-            subject: 'Planillas de Stock al ' + dia + '-' + mes + '-' + anno,
-            html: 'Adjunto Planilla de Stock al <b>' + dia + '-' + mes + '-' + anno + ' - ' + hora + ':' + minu + ' horas</b><br>Comentarios: ' + mailList.nombreCli,
-            attachments: [{ filename: cfile, path: cfile }]
-        };
-        // enviar el correo
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log('error en sendmail->', error);
-                res.json({ resultado: 'error', numero: 'NO Enviado' });
-                return;
-            } else {
-                console.log("Email enviado a -> ", mailList.emailTo);
-                console.log("Email con copia -> ", ((mailList.emailCc !== '' && mailList.emailCc !== undefined && mailList.emailCc !== 'undefined') ? mailList.emailCc : undefined));
-                res.json({ resultado: 'ok', numero: 'Enviado' });
-                return;
-            }
-        });
-        // 
-    },
-
-    componeBody: function(sql, id) {
-        //  
-        var request = new sql.Request();
-        request.input('id', sql.Int, id);
-        return request.execute("ksp_TraeDetalleK");
-        //
-    },
     primeraParte: function(cObs, cNumero, cOcc, xDatosVendedor, xDatosCliente) {
         return `
       <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -236,6 +220,7 @@ module.exports = {
                                             <td align="center">SubTotal</td>
                                         </tr>`;
     },
+
     segundaParte: function() {
         return `            </table>
 
@@ -265,6 +250,7 @@ module.exports = {
 
         </html>`;
     },
+
     cotizcuerpo: function(nombreVendedor, nombrecliente, empresa, xemailobs) {
         return `
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -330,6 +316,7 @@ module.exports = {
                                   <table border="1">
                                   ` + (empresa === '04' ? '<tr><td align="center">Código Principal</td><td align="center">Código Técnico</td><td align="center">Descripción</td><td align="center">Precio x Mt.</td><td align="center">Cantidad</td><td align="center">Unidad</td></tr>' : '<tr><td align="center">Imagen (150x150)</td><td align="center">Código Interno</td><td align="center">Cód.Técnico</td><td align="center">Descripción</td><td align="center">Precio Unit.</td><td align="center">Curva</td></tr>');
     },
+
     cotizfin: function() {
         return `            </table>
 
@@ -424,12 +411,5 @@ module.exports = {
                                   ` + (empresa === '04' ? '<tr><td align="center">Documento</td><td align="center">Folio</td><td align="center">Emision</td><td align="center">Vencimiento</td><td align="center">Monto</td><td align="center">Abonos</td></tr>' : '<tr><td align="center">Imagen (150x150)</td><td align="center">Código Interno</td><td align="center">Cód.Técnico</td><td align="center">Descripción</td><td align="center">Precio Unit.</td><td align="center">Curva</td></tr>');
     },
 
-};
 
-eliminarArchivo = (filename) => {
-    console.log('eliminando: ', filename);
-    fs.unlink(filename, (err) => {
-        if (err) throw err;
-        console.log('File deleted!', filename);
-    });
 };

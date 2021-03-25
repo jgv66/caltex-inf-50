@@ -13,14 +13,17 @@ var _funciones = require('./k_funciones.js');
 var _Activity = require('./k_regactiv.js');
 // exportar a excel
 var fs = require('fs');
+var fileSystem = require('fs');
 var excel_tto = require('./k_excel_gen');
 var request = require('request');
 var path = require('path');
+// var http      = require('http');
 //
 var Excel = require('exceljs');
 var fileExist = require('file-exists');
 //
 var uuid = 0;
+
 //
 app.use(function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
@@ -34,11 +37,16 @@ app.use(function(req, res, next) {
         next();
     }
 });
+// envio de _correos 
+var nodemailer = require('nodemailer'); // email sender function 
+exports.sendEmail = function(req, res) {
+    console.log('enviando correo...');
+};
 //
 var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-//
+
 app.set('port', 8125);
 var server = app.listen(8125, function() {
     var host = server.address().address;
@@ -52,6 +60,7 @@ app.use(express.static('./public'));
 publicpath = path.resolve(__dirname, 'public');
 CARPETA_IMGS = publicpath + '/images/';
 CARPETA_XLSX = publicpath + '/xlsx/';
+// console.log(CARPETA_IMGS, CARPETA_XLSX );
 
 // dejare el server myssql siempre activo
 var sql = require('mssql');
@@ -266,29 +275,99 @@ app.post('/ktp_traeDocumento',
             });
     });
 
-app.post('/encorr2',
-    async(req, res) => {
+app.post('/soloEnviarCorreo',
+    function(req, res) {
         //
-        const carro = req.body.itemes || [];
-        const xTo = req.body.cTo || '';
-        const xCc = req.body.cCc || '';
-        const xEmailVend = req.body.emailvend || '';
-        const xnombre = req.body.nombre || '';
-        const empresa = req.body.empresa || '';
-        const xnombrecli = req.body.cNombreCli || '(no indicado)';
-        const xemailobs = req.body.cEmailObs || '';
+        var carro = req.body.carro || [];
+        var xTo = req.body.cTo || '';
+        var xCc = req.body.cCc || '';
+        var xObs = req.body.cObs || '';
         //
         var lineas = '';
         var htmlBody = '';
-        let respuestaCorreo = false;
         //
-        const mailList = { cc: xEmailVend + (xCc === '' ? '' : ',' + xCc), to: xTo };
+        var x2 = '';
         //
-        const xhoy = new Date();
-        const anno = xhoy.getFullYear();
-        const mes = xhoy.getMonth() + 1;
-        const dia = xhoy.getDate();
-        const rnd = (Math.random() * (100 - 1) + 1).toString();
+        _elmail.delVendedor(sql, carro[0].vendedor).then(function(data) { x2 = data; });
+        // es obligatorio que el vendedor tenga correo
+        var mailList = [];
+        //
+        _Activity.registra(sql, carro[0].vendedor, 'soloEnviarCorreo', xTo, xCc, x2);
+        //
+        carro.forEach(element => {
+            lineas += '<tr>';
+            lineas += '<td></td>';
+            // lineas += '<td align="center"><img src="http://www.grupocaltex.cl/imagenes/fotos18/' + element.codigoimagen + '.jpg" width="150px" height="150px"/></td>';
+            lineas += '<td align="center">' + element.cantidad.toString() + '</td>';
+            lineas += '<td align="center">' + element.codigo + '</td>';
+            lineas += '<td align="center">' + element.descripcion + '</td>';
+            lineas += '<td align="center">' + element.preciounit.toLocaleString() + '</td>';
+            lineas += '<td align="center">' + element.descuentos.toString() + '</td>';
+            lineas += '<td align="center">' + element.subtotal.toLocaleString() + '</td>';
+            lineas += '</td>';
+        });
+        htmlBody = _correos.primeraParte(xObs) + lineas + _correos.segundaParte();
+        mailList.push({ cc: [xCc, x2], to: xTo });
+        //console.log('soloEnviarCorreo->',xCc, x2, xTo );
+        _correos.enviarCorreo(res, nodemailer, mailList, htmlBody);
+        //
+
+        //
+    });
+app.post('/enviarcorrreo',
+    function(req, res) {
+        //
+        var carro = req.body.itemes || [];
+        var xTo = req.body.cTo || '';
+        var xCc = req.body.cCc || '';
+        var xEmailVend = req.body.emailvend || '';
+        var xnombre = req.body.nombre || '';
+        //
+        var lineas = '';
+        var htmlBody = '';
+        //
+        var mailList = [{ cc: [xCc, xEmailVend], to: xTo }];
+        //
+        carro.forEach(function(element) {
+            lineas += '<tr>';
+            lineas += '<td align="center"><img src="http://www.grupocaltex.cl/imagenes/fotos18/' + element.codigoimagen + '.jpg" width="150px" height="150px"/></td>';
+            lineas += '<td align="center">' + element.codigo + '</td>';
+            lineas += '<td align="center">' + element.codigotec + '</td>';
+            lineas += '<td align="center">' + element.descrip + '</td>';
+            lineas += '<td align="center">' + element.precio.toLocaleString() + '</td>';
+            lineas += '<td align="center">' + element.rtu.toString() + '</td>';
+            lineas += '</tr>';
+        });
+        //
+        htmlBody = _correos.cotizcuerpo(xnombre) + lineas + _correos.cotizfin();
+        _correos.enviarCotizacion(res, nodemailer, mailList, htmlBody, '');
+        //
+        res.json({ resultado: 'ok', numero: 'ENVIADO' });
+        //
+    });
+
+app.post('/encorr2',
+    function(req, res) {
+        //
+        var carro = req.body.itemes || [];
+        var xTo = req.body.cTo || '';
+        var xCc = req.body.cCc || '';
+        var xEmailVend = req.body.emailvend || '';
+        var xnombre = req.body.nombre || '';
+        var empresa = req.body.empresa || '';
+        var xnombrecli = req.body.cNombreCli || '(no indicado)';
+        var xemailobs = req.body.cEmailObs || '';
+        //
+        var lineas = '';
+        var htmlBody = '';
+        //
+        var mailList = [{ cc: [xCc, xEmailVend], to: xTo }];
+        //
+        var xhoy = new Date();
+        var anno = xhoy.getFullYear();
+        var mes = xhoy.getMonth() + 1;
+        var dia = xhoy.getDate();
+        var rnd = (Math.random() * (100 - 1) + 1).toString();
         //
         var cfile = 'cotiz' + anno.toString() + mes.toString() + dia.toString() + rnd.replace(".", "") + '.csv';
         var pathfile = __dirname + '/public';
@@ -369,13 +448,170 @@ app.post('/encorr2',
         // 
         htmlBody = _correos.cotizcuerpo(xnombre, xnombrecli, empresa, xemailobs) + lineas + _correos.cotizfin();
         // 
-        await _correos.enCo2(res, mailList, htmlBody, cfile, pathfile, empresa);
+        _correos.enCo2(res, nodemailer, mailList, htmlBody, cfile, pathfile, fs, empresa);
         //
+        res.json({ resultado: 'ok', numero: 'ENVIADO' });
+        //
+    });
+
+// agregado el 29/11/2018
+app.post('/grabadocumentos_mejorado_para_trabajarlo',
+    function(req, res) {
+        // los parametros
+        let carro = req.body.carro;
+        let modalidad = req.body.modalidad;
+        let tipodoc = req.body.tipodoc || 'PRE'; /* PRE, NVV, COV */
+        let xObs = req.body.cObs || '';
+        let xOcc = req.body.cOcc || ''; // incorporada 27/07/2018, se modifica ktp_encabezado -> occ varchar(40)
+        // variables
+        let bodega_wms = '';
+        //
+        let query = '';
+        let xhoy = new Date();
+        let hora = xhoy.getTime();
+        //
+        let lineas = '';
+        let htmlBody = '';
+        let mailList = [];
+        let x1 = '';
+        let x2 = '',
+            rsocial = '',
+            copiasadic = '',
+            nombreVend = '',
+            i = 0,
+            monto = 0,
+            neto = 0,
+            iva = 0,
+            bruto = 0,
+            NoB = carro[0].metodolista;
+
+        // 
+        //console.log( carro );  
+        _Activity.registra(sql, carro[0].vendedor, 'grabadocumentos', tipodoc);
+        //
+        query = "declare @id     int      = 0 ; ";
+        query += "declare @nrodoc char(10) = ''; ";
+        query += "declare @Error nvarchar(250) ; ";
+        query += "begin transaction ;";
+        query += "insert into ktp_encabezado (empresa,cliente,suc_cliente,vendedor,fechaemision,";
+        query += "monto,observacion,occ,modalidad,valido,fechaentrega,horainicio,horafinal) ";
+        query += "values ('" + carro[0].empresa + "','" + carro[0].cliente + "','" + carro[0].suc_cliente + "','" + carro[0].vendedor + "',getdate(),";
+        query += "0,'" + xObs.trim() + "','" + xOcc.trim() + "','" + modalidad + "','',getdate(),'" + hora + "','" + hora + "') ;";
+        query += "set @Error = @@ERROR ; if (@Error<>0) goto TratarError ; ";
+        query += "select @id = @@IDENTITY ;";
+        query += "set @Error = @@ERROR ; if (@Error<>0) goto TratarError ; ";
+        //
+        for (i = 0; i < carro.length; i++) {
+            //
+            bodega_wms = carro[i].bodega;
+            //
+            query += "insert into ktp_detalle (id_preventa,linea,sucursal,bodega,codigo,unidad_tr,unidad1,unidad2,cantidad1,cantidad2,";
+            query += "listaprecio,metodolista,precio,";
+            query += "porcedes,descuentos,porcerec,recargos,observacion,valido)";
+            query += " values ";
+            query += "(@id," + (i + 1).toString() + ",'" + carro[i].sucursal + "','" + carro[i].bodega + "','" + carro[i].codigo + "',";
+            query += "1,'',''," + carro[i].cantidad.toString() + ", 0,'" + carro[i].listapre + "','" + carro[i].metodolista + "'," + carro[i].precio.toString() + ",";
+            query += carro[i].dsctovend.toString() + "," + ((carro[i].precio - carro[i].preciomayor) * carro[i].cantidad).toString() + ",0,0,'', '' ) ; ";
+            query += "set @Error = @@ERROR ; if (@Error<>0) goto TratarError ; ";
+            //
+        }
+        //    
+        query += "update ktp_encabezado set monto=( select sum((d.cantidad1*d.precio)-d.descuentos) from ktp_detalle as d where d.id_preventa=ktp_encabezado.id_preventa ) ";
+        query += " where id_preventa=@id ;";
+        query += "set @Error = @@ERROR ; if (@Error<>0) goto TratarError ; ";
+        //
+        if (tipodoc == 'PRE') { query += "exec ksp_grabaDocumentoPre_v1 'Pendiente', 'NVV', @id, @nrodoc output ;"; } else if (tipodoc == 'NVV' || tipodoc == 'COV') { query += "exec ksp_grabaDocumentoDef_v1 '" + tipodoc + "', @id, @nrodoc output ;"; }
+        //
+        query += "set @Error = @@ERROR ; if (@Error<>0) goto TratarError ; ";
+        query += "commit transaction ;";
+        query += "select @nrodoc as numero, @id as id ;";
+        query += "TratarError: ";
+        query += "if @@Error<>0 ";
+        query += "    BEGIN ";
+        query += "    ROLLBACK TRANSACTION ";
+        query += "    END ;";
+        //
+        // console.log(query);
+        //
+        conex
+            .then(function() {
+                //
+                lineas = '';
+                var request = new sql.Request();
+                // 
+                request.query(query)
+                    .then(function(rs) {
+                        console.log("documento (" + tipodoc + ") grabado ", rs.recordset);
+                        res.json({ resultado: 'ok', numero: rs.recordset[0].numero });
+                        // es obligatorio que el vendedor tenga correo
+                        elmail.delVendedor(sql, carro[0].vendedor)
+                            .then(function(data) {
+                                x2 = data[0].correo;
+                                nombreVend = data[0].nombre;
+                                copiasadic = data[0].copiasadic || '';
+                                //
+                                elmail.delCliente(sql, carro[0].cliente, carro[0].suc_cliente)
+                                    .then(function(data) {
+                                        x1 = data[0].correo;
+                                        rsocial = data[0].rs;
+                                        //
+                                        correos.componeBody(sql, rs.recordset[0].id)
+                                            .then(data => {
+                                                data.recordset.forEach(element => {
+                                                    lineas += '<tr>';
+                                                    lineas += '<td align="center"><img src="http://www.grupocaltex.cl/imagenes/fotos18/' + element.codigoimagen + '.jpg" width="150px" height="150px"/></td>';
+                                                    lineas += '<td align="center">' + element.cantidad.toString() + '</td>';
+                                                    lineas += '<td align="center">' + element.codigo + '</td>';
+                                                    lineas += '<td align="center">' + element.descripcion + '</td>';
+                                                    lineas += '<td align="center">' + element.preciounit.toLocaleString() + '</td>';
+                                                    lineas += '<td align="center">' + element.porcentaje.toString() + '%</td>';
+                                                    lineas += '<td align="center">' + element.subtotal.toLocaleString() + '</td>';
+                                                    lineas += '</tr>';
+                                                    monto += element.subtotal;
+                                                    if (++i == data.recordset.length) {
+                                                        if (NoB == 'N') {
+                                                            neto = monto;
+                                                            iva = Math.round(monto * 0.19);
+                                                            bruto = neto + iva;
+                                                        } else {
+                                                            bruto = monto;
+                                                            neto = Math.round(monto / (1 + 19));
+                                                            iva = bruto - neto;
+                                                        }
+                                                        lineas += '<tr>';
+                                                        lineas += '<td colspan="5" align="right"><strong>TOTAL NETO :</strong></td>';
+                                                        lineas += '<td align="center">' + neto.toLocaleString() + '</td>';
+                                                        lineas += '</tr>';
+                                                        lineas += '<tr>';
+                                                        lineas += '<td colspan="5" align="right"><strong>IVA :</strong></td>';
+                                                        lineas += '<td align="center">' + iva.toLocaleString() + '</td>';
+                                                        lineas += '</tr>';
+                                                        lineas += '<tr>';
+                                                        lineas += '<td colspan="5" align="right"><strong>TOTAL BRUTO :</strong></td>';
+                                                        lineas += '<td align="center">' + bruto.toLocaleString() + '</td>';
+                                                        lineas += '</tr>';
+                                                        //            
+                                                    }
+                                                });
+                                                // 
+                                                htmlBody = correos.primeraParte(xObs, nombreVend, rsocial, carro[0].cliente, carro[0].suc_cliente, rs.recordset[0].numero, tipodoc, xOcc) + lineas + correos.segundaParte();
+                                                //
+                                                mailList.push({ cc: [x2, copiasadic], to: x1 });
+                                                correos.enviarCorreo(null, nodemailer, mailList, htmlBody);
+                                            });
+                                    });
+                            });
+                    })
+                    .catch(function(er) {
+                        console.log('error al grabar', er);
+                        res.send(er);
+                    });
+            });
     });
 
 // agregado el 23/05/2018
 app.post('/grabadocumentos',
-    async(req, res) => {
+    function(req, res) {
         // los parametros
         let carro = req.body.carro;
         let modalidad = req.body.modalidad;
@@ -383,15 +619,13 @@ app.post('/grabadocumentos',
         let xObs = req.body.cObs || '';
         let xOcc = req.body.cOcc || ''; // incorporada 27/07/2018, se modifica ktp_encabezado -> occ varchar(40)
         let xFechaDesp = req.body.fechaDespacho || ''; // incorporrado el 30/110/2018
-        const empresa = req.body.empresa;
         //
         let error;
         let xhoy = new Date();
         let hora = xhoy.getTime();
         //
         let htmlBody = '';
-        let mailList;
-        let respuestaCorreo = false;
+        let mailList = [];
         let xDatosVendedor = '',
             xDatosCliente = '',
             monto = 0,
@@ -417,7 +651,7 @@ app.post('/grabadocumentos',
                 if (carroConCompras.length > 0) {
                     //
                     query = _funciones.generaQuery(carroConCompras, modalidad, hora, tipodoc, xObs, xOcc, xFechaDesp);
-                    // console.log("generaQuery( CON ) " + query);
+                    console.log("generaQuery( CON ) " + query);
                     //
                     conex
                         .then(function() {
@@ -432,12 +666,12 @@ app.post('/grabadocumentos',
                                     ok_con = 1;
                                     //if (carroSinCompras.length == 0) { res.json( { resultado: 'ok', numero: rs.recordset[0].numero } ); };
                                     _correos.componeBody(sql, rs.recordset[0].id)
-                                        .then(async(data) => {
+                                        .then(data => {
                                             console.log(data);
                                             data.recordset.forEach(element => {
                                                 lineas += '<tr>';
-                                                // lineas += '<td></td>';
-                                                lineas += '<td align="center"><img src="http://www.grupocaltex.cl/imagenes/fotos18/' + element.codigoimagen + '.jpg" width="150px" height="150px"/></td>';
+                                                lineas += '<td></td>';
+                                                // lineas += '<td align="center"><img src="http://www.grupocaltex.cl/imagenes/fotos18/' + element.codigoimagen + '.jpg" width="150px" height="150px"/></td>';
                                                 lineas += '<td align="center">' + element.cantidad.toString() + '</td>';
                                                 lineas += '<td align="center">' + element.codigo + '</td>';
                                                 lineas += '<td align="center">' + element.descripcion + '</td>';
@@ -472,10 +706,9 @@ app.post('/grabadocumentos',
                                                 }
                                             });
                                             htmlBody = _correos.primeraParte(xObs, rs.recordset[0].numero, xOcc, xDatosVendedor, xDatosCliente) + lineas + _correos.segundaParte();
-                                            mailList = { cc: xDatosVendedor.correo, to: xDatosCliente.correo };
-                                            // console.log('mailList->', mailList);
-                                            respuestaCorreo = await _correos.enviarCorreo(mailList, htmlBody, empresa);
-                                            error = (respuestaCorreo === false ? 'Correo no se envió' : undefined);
+                                            mailList.push({ cc: xDatosVendedor.correo, to: xDatosCliente.correo });
+                                            // console.log(htmlBody);
+                                            _correos.enviarCorreo(res, nodemailer, mailList, htmlBody);
                                         });
                                     callback();
                                 })
@@ -728,10 +961,10 @@ app.post('/ktp_stock_excel',
                 filename = path.join(CARPETA_XLSX, `Stock_${fechaYMD}_${id_unico}.xlsx`);
                 //
                 createExcelFile(prefix, listas, imagenes, filename, fechaYMD)
-                    .then(async() => {
+                    .then(() => {
                         if (fileExist.sync(filename)) {
                             console.log('archivo existe ', filename);
-                            await _correos.enviarCorreoExcel(res, mailList, filename);
+                            enviarCorreo(res, mailList, filename);
                         }
                     })
                     .catch(e => console.log(e));
@@ -746,39 +979,7 @@ app.post('/ktp_stock_excel',
 
     });
 
-app.post('/enviarDeuda',
-    async(req, res) => {
-        //
-        let deuda = JSON.parse(req.body.deuda);
-        let cliente = JSON.parse(req.body.cliente);
-        let xTo = req.body.to || '';
-        let xCc = req.body.cc || '';
-        let vendedor = req.body.vendedor;
-        //
-        var lineas = '';
-        var htmlBody = '';
-        //
-        _Activity.registra(sql, vendedor, 'enviarDeuda', xTo, xCc, x2);
-        //
-        deuda.forEach(element => {
-            lineas += '<tr>';
-            lineas += '<td align="center">' + element.documento + '</td>';
-            lineas += '<td align="center">' + element.folio.toString() + '</td>';
-            lineas += '<td align="center">' + element.emision + '</td>';
-            lineas += '<td align="center">' + element.vencimiento + '</td>';
-            lineas += '<td align="center">' + element.monto.toLocaleString() + '</td>';
-            lineas += '<td align="center">' + element.abonos.toLocaleString() + '</td>';
-            lineas += '<td align="center">' + element.saldo.toLocaleString() + '</td>';
-            lineas += '</tr>';
-        });
-        htmlBody = _correos.deudaHeader(cliente) + lineas + _correos.deudaFooter();
-        let mailList = { cc: xCc, to: xTo };
-        await _correos.enviarCorreo(mailList, htmlBody, '');
-        res.json({ resultado: 'ok', numero: 'Enviado' });
-        //
-    });
-
-const generateUUID = () => {
+function generateUUID() {
     var d = new Date().getTime();
     var uuid = 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = (d + Math.random() * 16) % 16 | 0;
@@ -786,6 +987,74 @@ const generateUUID = () => {
         return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
     return uuid;
+}
+
+enviarCorreo = function(res, mailList, filename) {
+    //
+    xhoy = new Date();
+    anno = xhoy.getFullYear().toString();
+    mes = (xhoy.getMonth() + 1).toString();
+    dia = xhoy.getDate().toString();
+    hora = xhoy.getHours().toString();
+    minu = xhoy.getMinutes().toString();
+    //
+    sender = 'postmaster@sandbox954bd8f7f0134a9c9eccebd014c08e75.mailgun.org';
+    psswrd = '36aff41967ac82e539b5df4a5d1ee96b-4de08e90-2d01ea0f';
+    //
+    cTo = mailList.emailTo;
+    cCc = mailList.emailCc;
+    cSu = 'Planillas de Stock al ' + dia + '-' + mes + '-' + anno;
+    // si no tiene correo se envia al vendedor
+    if (cTo === '' || cTo == undefined) {
+        cTo = cCc;
+    }
+    // datos del enviador
+    var transporter = nodemailer.createTransport({
+        host: 'smtp.mailgun.org',
+        port: 587,
+        secure: false,
+        auth: {
+            user: sender,
+            pass: psswrd
+        },
+        tls: { rejectUnauthorized: false },
+        // logger: true,
+        // debug: true
+    });
+    // opciones del correo
+    var mailOptions = {
+        from: { name: "GrupoCaltex", address: 'kinetik@grupocaltex.cl' },
+        to: cTo,
+        cc: cCc,
+        subject: cSu,
+        // text:       "Adjunto Planilla de Stock al "+dia+"-"+mes+"-"+anno, // plain text body
+        html: 'Adjunto Planilla de Stock al <b>' + dia + '-' + mes + '-' + anno + ' - ' + hora + ':' + minu + ' horas</b><br>Comentarios: ' + mailList.nombreCli,
+        attachments: [{
+            filename: 'stock_al_' + anno + mes + dia + '_' + hora + '_' + minu + '.xlsx',
+            path: filename,
+            content: 'application/octet-stream'
+        }]
+    };
+    console.log(filename);
+
+    // enviar el correo
+    transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+            console.log('error en sendmail->', error);
+            res.json({ resultado: 'error', mensaje: error.message });
+        } else {
+            console.log("Email enviado a -> ", cTo, "Adjuntos : ", filename);
+            res.json({ resultado: 'ok' });
+            eliminar(filename);
+        }
+    });
+};
+eliminar = function(filename) {
+    console.log('eliminando: ', filename);
+    fs.unlink(filename, function(err) {
+        if (err) throw err;
+        console.log('File deleted!', filename);
+    });
 };
 
 createExcelFile = (prefix, lista, imagenes, filename, fechaYMD) => {
@@ -906,3 +1175,38 @@ writeExcelFile = (filename, workbook) => {
     console.log('Creando archivo Excel : ', filename);
     return workbook.xlsx.writeFile(filename);
 };
+
+app.post('/enviarDeuda',
+    function(req, res) {
+        //
+        let deuda = JSON.parse(req.body.deuda);
+        let cliente = JSON.parse(req.body.cliente);
+        let xTo = req.body.to || '';
+        let xCc = req.body.cc || '';
+        let vendedor = req.body.vendedor;
+        //
+        var lineas = '';
+        var htmlBody = '';
+        //
+        var x2 = '';
+        //
+        var mailList = [];
+        //
+        _Activity.registra(sql, vendedor, 'enviarDeuda', xTo, xCc, x2);
+        //
+        deuda.forEach(element => {
+            lineas += '<tr>';
+            lineas += '<td align="center">' + element.documento + '</td>';
+            lineas += '<td align="center">' + element.folio.toString() + '</td>';
+            lineas += '<td align="center">' + element.emision + '</td>';
+            lineas += '<td align="center">' + element.vencimineto + '</td>';
+            lineas += '<td align="center">' + element.monto.toLocaleString() + '</td>';
+            lineas += '<td align="center">' + element.abonos.toLocaleString() + '</td>';
+            lineas += '<td align="center">' + element.saldo.toLocaleString() + '</td>';
+            lineas += '</tr>';
+        });
+        htmlBody = _correos.deudaHeader(cliente) + lineas + _correos.deudaFooter();
+        mailList.push({ cc: [xCc, x2], to: xTo });
+        _correos.enviarCorreo(res, nodemailer, mailList, htmlBody);
+        //
+    });
