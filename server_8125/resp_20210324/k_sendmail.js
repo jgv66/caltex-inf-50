@@ -1,8 +1,8 @@
 //
 const fs = require('fs');
 //
-const DOMAIN = 'mailer.kinetik.cl';
-const api_key = 'df3843228fab5e3da44a6332c83a203b-4de08e90-4404475b';
+const DOMAIN = '';
+const api_key = '';
 const mailgun = require("mailgun-js")({ apiKey: api_key, domain: DOMAIN });
 // configuracion de mail-gun
 const SENDER_INTERNO = 'kinetik@grupocaltex.cl';
