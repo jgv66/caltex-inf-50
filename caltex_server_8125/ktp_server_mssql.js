@@ -1,24 +1,24 @@
 // console.log("hola mundo");
-var express = require('express');
-var app = express();
+let express = require('express');
+let app = express();
 // tto asincrono para grabaciones
-var async = require("async");
+let async = require("async");
 // configuracion
-var _dbconex = require('./conexion_mssql.js');
-var _configuracion = require('./configuracion_cliente.js');
-var _correos = require('./k_sendmail.js');
-var _elmail = require('./k_traemail.js');
-var _lasEmpresas = require('./k_empresas.js');
-var _funciones = require('./k_funciones.js');
-var _Activity = require('./k_regactiv.js');
+let _dbconex = require('./conexion_mssql.js');
+let _configuracion = require('./configuracion_cliente.js');
+let _correos = require('./k_sendmail.js');
+let _elmail = require('./k_traemail.js');
+let _lasEmpresas = require('./k_empresas.js');
+let _funciones = require('./k_funciones.js');
+let _Activity = require('./k_regactiv.js');
 // exportar a excel
-var fs = require('fs');
-var excel_tto = require('./k_excel_gen');
-var request = require('request');
-var path = require('path');
+let fs = require('fs');
+let excel_tto = require('./k_excel_gen');
+let request = require('request');
+let path = require('path');
 //
-var Excel = require('exceljs');
-var fileExist = require('file-exists');
+let Excel = require('exceljs');
+let fileExist = require('file-exists');
 //
 var uuid = 0;
 //
@@ -59,7 +59,7 @@ var conex = sql.connect(_dbconex);
 
 //---------------------- pruebas
 app.get('/ping',
-    function(req, res) {
+    (req, res) => {
         //
         console.log('PONG');
         res.json({ resultado: "ok", datos: 'hola mundo' });
@@ -860,7 +860,7 @@ createExcelFile = (prefix, lista, imagenes, filename, fechaYMD) => {
         let prodImg;
         let imgPath;
 
-        // console.log('imagen ', path.join(CARPETA_IMGS, `${ prefix + imagen }.jpg`));
+        console.log('imagen ', path.join(CARPETA_IMGS, `${ prefix + imagen }.jpg`));
 
         try {
             imgPath = path.join(CARPETA_IMGS, `${ prefix + imagen }.jpg`);

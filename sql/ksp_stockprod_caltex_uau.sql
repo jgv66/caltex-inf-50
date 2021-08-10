@@ -39,21 +39,34 @@ BEGIN
 
 	set @xusuario = RTRIM(@usuario);
 	SET @xkodigos = replace( @codigos, char(34), char(39) );
-	 
+
+    set @query += 'with images ';
+    set @query += 'as ( select PR.KOPR, (case when patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))>0 then substring(rtrim(PR.KOPRTE), 1, len(rtrim(PR.KOPRTE))-patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))) else rtrim(PR.KOPRTE) end) as codigosincolor ';
+    set @query +=				'from MAEPR AS PR with (nolock) ) '; 
     set @query +=  'select PR.KOPR as codigo,PR.KOPRTE as codigotec,';
-	set @query +=         '(case when patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))>0 then substring(rtrim(PR.KOPRTE), 1, len(rtrim(PR.KOPRTE))-patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))) else rtrim(PR.KOPRTE) end) as codigosincolor,';
-	set @query +=         '(case when patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))>0 then substring(rtrim(PR.KOPRTE), 1, len(rtrim(PR.KOPRTE))-patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))) else rtrim(PR.KOPRTE) end) as codigoimagen,';
+    -- set @query +=         '(case when patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))>0 then substring(rtrim(PR.KOPRTE), 1, len(rtrim(PR.KOPRTE))-patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))) else rtrim(PR.KOPRTE) end) as codigosincolor,';
+    -- set @query +=         '(case when patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))>0 then substring(rtrim(PR.KOPRTE), 1, len(rtrim(PR.KOPRTE))-patindex(''%-%'',reverse(rtrim(PR.KOPRTE)))) else rtrim(PR.KOPRTE) end) as codigoimagen,';
+    set @query +=         '( case ';
+    set @query +=         ' when exists ( select * from ktp_images_caltex as im where im.img = rtrim(PR.KOPRTE) ) then rtrim(PR.KOPRTE) ';
+    set @query +=         ' when exists ( select * from ktp_images_caltex as im where im.img = rtrim(img.codigosincolor) ) then rtrim(img.codigosincolor) ';
+    set @query +=         ' else ''no-img'' end ) as codigosincolor,';
+    set @query +=         '( case ';
+    set @query +=         ' when exists ( select * from ktp_images_caltex as im where im.img = rtrim(PR.KOPRTE) ) then rtrim(PR.KOPRTE) ';
+    set @query +=         ' when exists ( select * from ktp_images_caltex as im where im.img = rtrim(img.codigosincolor) ) then rtrim(img.codigosincolor) ';
+    set @query +=         ' else ''no-img'' end ) as codigoimagen,';
+    --
     set @query +=         'PR.NOKOPR AS descripcion,coalesce(OB.MENSAJE03,'''') as distribucion,';
-	set @query +=         'L.PP01UD as precio,PR.RLUD as rtu,';
+    set @query +=         'L.PP01UD as precio,PR.RLUD as rtu,';
     set @query +=         'COALESCE(BO.STFI1,0) as fisico_ud1,';
-	set @query +=         'coalesce(BO.STOCNV1,  0) as pendiente_ud1,';
-	set @query +=         'coalesce(BO.STOCNV1C, 0) as porllegar_ud1,';
-	set @query +=         'COALESCE(BO.STFI1,0)-coalesce(BO.STOCNV1,0)+coalesce(BO.STOCNV1C,0) as saldo_ud1,';
-	set @query +=         'cast(0 as decimal(18,3)) as metros, ';
-	set @query +=         'cast(0 as decimal(18,3)) as rollos, ';
-	set @query +=         'cast(0 as decimal(18,3)) as precioxmetro ';
+    set @query +=         'coalesce(BO.STOCNV1,  0) as pendiente_ud1,';
+    set @query +=         'coalesce(BO.STOCNV1C, 0) as porllegar_ud1,';
+    set @query +=         'COALESCE(BO.STFI1,0)-coalesce(BO.STOCNV1,0)+coalesce(BO.STOCNV1C,0) as saldo_ud1,';
+    set @query +=         'cast(0 as decimal(18,3)) as metros, ';
+    set @query +=         'cast(0 as decimal(18,3)) as rollos, ';
+    set @query +=         'cast(0 as decimal(18,3)) as precioxmetro ';
     set @query += 'FROM MAEPR          AS PR  WITH (NOLOCK) ';
     set @query += 'inner join MAEPREM  AS ME  WITH (NOLOCK) on PR.KOPR=ME.KOPR and ME.EMPRESA='+char(39)+@xempresa+char(39)+' ';
+    set @query += 'inner join images   AS img WITH (NOLOCK) on PR.KOPR=img.KOPR ';
     set @query += 'left  join MAEPROBS AS OB  WITH (NOLOCK) on PR.KOPR=OB.KOPR ';
     set @query += 'left  join MAEST    AS BO  WITH (NOLOCK) on BO.EMPRESA=ME.EMPRESA AND BO.KOBO='+char(39)+@xbodega+char(39)+' AND BO.KOPR = PR.KOPR ';
     set @query += 'left  join TABPRE   AS L   with (nolock) on L.KOLT='+char(39)+@xlistapre+char(39)+' AND L.KOPR=PR.KOPR ';
