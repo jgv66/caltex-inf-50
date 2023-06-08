@@ -29,7 +29,8 @@ app.use(function(req, res, next) {
 
     // intercept OPTIONS method
     if ('OPTIONS' == req.method) {
-        res.send(204);
+        // res.send(204);
+        res.sendStatus(204)
     } else {
         next();
     }
@@ -87,7 +88,6 @@ app.get('/ktp_empresas_get',
                 res.json({ resultado: 'ok', empresas: data });
             });
     });
-
 app.post('/ktp_rubros',
     function(req, res) {
         //
@@ -104,7 +104,6 @@ app.get('/ktp_rubros_get',
                 res.json({ resultado: 'ok', rubros: data });
             });
     });
-
 app.post('/ktp_marcas',
     function(req, res) {
         //
@@ -121,7 +120,6 @@ app.get('/ktp_marcas_get',
                 res.json({ resultado: 'ok', marcas: data });
             });
     });
-
 app.post('/ktp_superfamilias',
     function(req, res) {
         //
@@ -154,7 +152,6 @@ app.get('/ktp_familias_get',
                 res.json({ resultado: 'ok', familias: data });
             });
     });
-
 app.post('/ktp_variables',
     function(req, res) {
         //
@@ -164,7 +161,6 @@ app.post('/ktp_variables',
                 res.json({ resultado: 'ok', variables: data });
             });
     });
-
 // http://server:port/ktp_variables/:usr/:dato1/:dato2....
 app.get('ktp_variables_get/:cliente',
     function(req, res) {
@@ -173,7 +169,6 @@ app.get('ktp_variables_get/:cliente',
                 res.json({ resultado: 'ok', variables: data });
             });
     });
-
 //agregado 12/01/2019
 // se pasa parametro de empresa 11/03/2019
 app.post('/ktp_stock',
@@ -417,7 +412,7 @@ app.post('/grabadocumentos',
                 if (carroConCompras.length > 0) {
                     //
                     query = _funciones.generaQuery(carroConCompras, modalidad, hora, tipodoc, xObs, xOcc, xFechaDesp);
-                    // console.log("generaQuery( CON ) " + query);
+                    console.log("generaQuery( CON ) " + query);
                     //
                     conex
                         .then(function() {

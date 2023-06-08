@@ -2,6 +2,7 @@
 /*
 exec ksp_buscarProductos_v2_caltex '','ZAPATILLA DAMA NW WHITE','001','01P','','','','','',20,false,false,false,'02','NRP','' ;
 exec ksp_buscarProductos_v2_caltex '','ZAPATILLA DAMA NW WHITE','001','01P','','','','','',40,false,false,false,'02','NRP','' ;
+exec ksp_buscarProductos_v2_caltex '20NW090420V','','001','01P','','','','','',0 ,true,true,  true, '02','KBR','86697600' ;
 */
 
 IF OBJECT_ID('ksp_buscarProductos_v2_caltex', 'P') IS NOT NULL  
@@ -67,7 +68,7 @@ BEGIN
     set @xusuario		= RTRIM(@usuario);
 	--
 	if ( @cliente <> '' ) begin
-		select @dsctocli=DSCTOCLI from PDIMCLI with (nolock) WHERE CODIGO=@cliente ;
+		select @dsctocli = cast( coalesce(DSCTOCLI,0) as decimal(18,5) )from PDIMCLI with (nolock) WHERE CODIGO=@cliente ;
 	end;
 	--
 	select @sucursal = KOSU from TABBO with (nolock) where EMPRESA=@empresa AND KOBO = @bodega;
@@ -94,10 +95,10 @@ BEGIN
 	set @query +=         'COALESCE(BO.STFI1,0)-coalesce(BO.STOCNV1,0)+coalesce(BO.STOCNV1C,0) as saldo_ud1,';
   set @query +=         '0.0 as apedir,';
 	set @query +=         'coalesce( (select top 1 cast(1 as bit) from MAEDDO as ddo with (nolock) WHERE ddo.EMPRESA='+char(39)+@empresa+char(39)+' and ddo.KOPRCT=PR.KOPR and ddo.TIDO='+char(39)+@occ+char(39)+' and ddo.CAPRCO1-ddo.CAPRAD1-ddo.CAPREX1>0),cast(0 as bit) ) as concompras,';
-  set @query +=         'BO.KOSU as sucursal,'+char(39)+@bodega+char(39)+' as bodega,( select rtrim(TB.NOKOBO) from TABBO AS TB with (nolock) where TB.KOBO='+char(39)+@bodega+char(39)+' ) as nombrebodega,';
+  set @query +=         char(39)+@sucursal+char(39)+' as sucursal,'+char(39)+@bodega+char(39)+' as bodega,( select rtrim(TB.NOKOBO) from TABBO AS TB with (nolock) where TB.KOBO='+char(39)+@bodega+char(39)+' ) as nombrebodega,';
   set @query +=         'L.PP01UD as precio ,round((L.PP01UD-(L.PP01UD*L.DTMA01UD/100)),0) as preciomayor ,L.DTMA01UD as descuentomax ,round(L.PP01UD*L.DTMA01UD/100,0) as dsctovalor ,';
   set @query +=         'upper((case when patindex(''%#%'',reverse(rtrim(L.EDTMA01UD)))>0 then substring(rtrim(L.EDTMA01UD), 1, len(rtrim(L.EDTMA01UD))-patindex(''%#%'',reverse(rtrim(L.EDTMA01UD)))) else rtrim(L.EDTMA01UD) end)) as ecu_max1, ';
-  set @query +=         char(39)+'1'+char(39)+' as ud_venta,0.0 as montolinea, ' + CAST( @dsctocli as varchar(20) ) + ' as dsctovend,';
+  set @query +=         char(39)+'1'+char(39)+' as ud_venta,0.0 as montolinea, ' + CAST( @dsctocli as varchar(50) ) + ' as dsctovend,';
   set @query +=         'coalesce(MA.NOKOMR,'+char(39)+''+char(39)+') as marca,';
   set @query +=         'coalesce(SF.NOKOFM,'+char(39)+''+char(39)+') as superfam,';
   set @query +=         'L.tipolista,L.MELT as metodolista,'+char(39)+@xlistapre+char(39)+' as listaprecio ';
@@ -133,71 +134,55 @@ BEGIN
     set @descri = case when @descri<>'' then @descri else '' end;
     set @kodigo = case when @codproducto<>'' then @codproducto else '' end;
 
-    if ( @xsuperfam<>'' or @xfamilia<>'' or @xrubros<>'' or @xmarcas<>'' ) and ( @descri='' and @kodigo='' ) -- solo superfamilia
-    begin
-		if @xsuperfam<>'' 
-		begin
-			set @xsuperfam = replace( @xsuperfam, ' AND ', ' ' ); 
-			set @query = concat( @query, ' WHERE ', @xsuperfam, @xfamilia, @xrubros, @xmarcas, @solodesplegar, @stock, @soloimportados, @soloconprecios, @xorden, @paginar ); 
-		end
-		else
-		begin 
-			if @xfamilia<>'' 
-			begin
-				set @xfamilia = replace( @xfamilia, ' AND ', ' ' ); 
-				set @query = concat( @query, ' WHERE ', @xfamilia, @xsuperfam, @xrubros, @xmarcas, @solodesplegar, @stock, @soloimportados, @soloconprecios, @xorden, @paginar ); 
-			end
-			else
-			begin
-				if @xrubros<>'' 
-				begin
-					set @xrubros = replace( @xrubros, ' AND ', ' ' ); 
-					set @query = concat( @query, ' WHERE ', @xrubros, @xsuperfam, @xfamilia, @xmarcas, @solodesplegar, @stock, @soloimportados, @soloconprecios, @soloconprecios, @xorden, @paginar ); 
-				end
-				else
-				begin
-					set @xmarcas = replace( @xmarcas, ' AND ', ' ' ); 
-					set @query = concat( @query, ' WHERE ', @xmarcas, @xsuperfam, @xfamilia, @xrubros, @solodesplegar, @stock, @soloimportados, @soloconprecios, @xorden, @paginar ); 
-				end
-			end
-		end
-        EXECUTE sp_executesql @query
+    if ( @xsuperfam<>'' or @xfamilia<>'' or @xrubros<>'' or @xmarcas<>'' ) and ( @descri='' and @kodigo='' ) begin -- solo superfamilia
+		    if ( @xsuperfam<>'' ) begin
+			      set @xsuperfam = replace( @xsuperfam, ' AND ', ' ' ); 
+			      set @query = concat( @query, ' WHERE ', @xsuperfam, @xfamilia, @xrubros, @xmarcas, @solodesplegar, @stock, @soloimportados, @soloconprecios, @xorden, @paginar ); 
+		    end
+		    else begin 
+			    if ( @xfamilia<>'' ) begin
+				    set @xfamilia = replace( @xfamilia, ' AND ', ' ' ); 
+				    set @query = concat( @query, ' WHERE ', @xfamilia, @xsuperfam, @xrubros, @xmarcas, @solodesplegar, @stock, @soloimportados, @soloconprecios, @xorden, @paginar ); 
+			    end
+			    else begin
+				    if ( @xrubros<>'' ) begin
+					    set @xrubros = replace( @xrubros, ' AND ', ' ' ); 
+					    set @query = concat( @query, ' WHERE ', @xrubros, @xsuperfam, @xfamilia, @xmarcas, @solodesplegar, @stock, @soloimportados, @soloconprecios, @soloconprecios, @xorden, @paginar ); 
+				    end
+				    else begin
+					    set @xmarcas = replace( @xmarcas, ' AND ', ' ' ); 
+					    set @query = concat( @query, ' WHERE ', @xmarcas, @xsuperfam, @xfamilia, @xrubros, @solodesplegar, @stock, @soloimportados, @soloconprecios, @xorden, @paginar ); 
+				    end;
+			    end;
+		    end;
+        EXECUTE sp_executesql @query;
     end
-    else
-    begin
-        if @descri<>'' and @kodigo<>''                  -- ambos con datos
-        begin
-			--exec ksp_TipoGoogle 'PR.KOPRTE', @kodigo, @salida = @xkopr   output;
-			exec ksp_TipoGoogle 'PR.NOKOPR', @descri, @salida = @xnokopr output;
-			set @xkopr   += CONCAT( ' charIndex( upper(', char(39)+LTRIM(RTRIM(@kodigo))+char(39), '),', 'upper(PR.KOPRTE)',' )>0 ' );
-			--set @xnokopr += CONCAT( ' charIndex( upper(', char(39)+LTRIM(RTRIM(@descri))+char(39), '),', 'upper(PR.NOKOPR)',' )>0 ' );
-			--
-			set @query = concat( @query, ' WHERE ', @xkopr, ' AND ',  @xnokopr, @solodesplegar, @stock, @xsuperfam, @xfamilia, @xrubros, @xmarcas, @soloimportados, @soloconprecios, @xorden, @paginar ); 
-			print @query;
-			EXECUTE sp_executesql @query
+    else begin
+        if ( @descri<>'' and @kodigo<>'' ) begin   -- ambos con datos
+          --
+			    exec ksp_TipoGoogle 'PR.NOKOPR', @descri, @salida = @xnokopr output;
+			    set @xkopr   += CONCAT( ' charIndex( upper(', char(39)+LTRIM(RTRIM(@kodigo))+char(39), '),', 'upper(PR.KOPRTE)',' )>0 ' );
+			    --
+			    set @query = concat( @query, ' WHERE ', @xkopr, ' AND ',  @xnokopr, @solodesplegar, @stock, @xsuperfam, @xfamilia, @xrubros, @xmarcas, @soloimportados, @soloconprecios, @xorden, @paginar );
+			    EXECUTE sp_executesql @query
         end
-        else
-        begin
-            if @descri<>'' and @kodigo=''               -- solo descripcion con datos
-            begin
+        else begin
+            if ( @descri<>'' and @kodigo='' ) begin   -- solo descripcion con datos
                 exec ksp_TipoGoogle 'PR.NOKOPR',@descri, @salida = @xnokopr output;
-				--set @xnokopr += CONCAT( ' charIndex( upper(', char(39)+LTRIM(RTRIM(@descri))+char(39), '),', 'upper(PR.NOKOPR)',' )>0 ' );
-                set @query = concat( @query, ' WHERE ', @xnokopr, @solodesplegar, @stock, @xsuperfam, @xfamilia, @xrubros, @xmarcas, @soloimportados, @soloconprecios, @xorden, @paginar ); 
-				print @query;
+				        --set @xnokopr += CONCAT( ' charIndex( upper(', char(39)+LTRIM(RTRIM(@descri))+char(39), '),', 'upper(PR.NOKOPR)',' )>0 ' );
+                set @query = concat( @query, ' WHERE ', @xnokopr, @solodesplegar, @stock, @xsuperfam, @xfamilia, @xrubros, @xmarcas, @soloimportados, @soloconprecios, @xorden, @paginar );
                 EXECUTE sp_executesql @query
             end         
-        else
-        begin 
-            if @descri='' and @kodigo<>''               -- solo codigo con datos
-            begin
-                --exec ksp_TipoGoogle 'PR.KOPRTE',@kodigo, @salida = @xkopr output;
-				set @xkopr += CONCAT( ' charIndex( upper(', char(39)+LTRIM(RTRIM(@kodigo))+char(39), '),', 'upper(PR.KOPRTE)',' )>0 ' );
-                set @query = concat( @query, ' WHERE ', @xkopr, @solodesplegar, @stock, @xsuperfam, @xfamilia, @xrubros, @xmarcas, @soloimportados, @soloconprecios, @xorden, @paginar ); 
-				print @query;
-                EXECUTE sp_executesql @query
-            end 
-        end
-    end 
+            else begin 
+                if ( @descri='' and @kodigo<>'' ) begin -- solo codigo con datos
+                    --
+				            set @xkopr += CONCAT( ' charIndex( upper(', char(39)+LTRIM(RTRIM(@kodigo))+char(39), '),', 'upper(PR.KOPRTE)',' )>0 ' );
+                    set @query = concat( @query, ' WHERE ', @xkopr, @solodesplegar, @stock, @xsuperfam, @xfamilia, @xrubros, @xmarcas, @soloimportados, @soloconprecios, @xorden, @paginar );
+                    EXECUTE sp_executesql @query;
+                    --
+                end ;
+            end;
+        end 
 	end
 END
 go

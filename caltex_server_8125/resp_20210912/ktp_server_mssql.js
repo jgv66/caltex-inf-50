@@ -1,24 +1,24 @@
 // console.log("hola mundo");
-var express = require('express');
-var app = express();
+let express = require('express');
+let app = express();
 // tto asincrono para grabaciones
-var async = require("async");
+let async = require("async");
 // configuracion
-var _dbconex = require('./conexion_mssql.js');
-var _configuracion = require('./configuracion_cliente.js');
-var _correos = require('./k_sendmail.js');
-var _elmail = require('./k_traemail.js');
-var _lasEmpresas = require('./k_empresas.js');
-var _funciones = require('./k_funciones.js');
-var _Activity = require('./k_regactiv.js');
+let _dbconex = require('./conexion_mssql.js');
+let _configuracion = require('./configuracion_cliente.js');
+let _correos = require('./k_sendmail.js');
+let _elmail = require('./k_traemail.js');
+let _lasEmpresas = require('./k_empresas.js');
+let _funciones = require('./k_funciones.js');
+let _Activity = require('./k_regactiv.js');
 // exportar a excel
-var fs = require('fs');
-var excel_tto = require('./k_excel_gen');
-var request = require('request');
-var path = require('path');
+let fs = require('fs');
+let excel_tto = require('./k_excel_gen');
+let request = require('request');
+let path = require('path');
 //
-var Excel = require('exceljs');
-var fileExist = require('file-exists');
+let Excel = require('exceljs');
+let fileExist = require('file-exists');
 //
 var uuid = 0;
 //
@@ -59,7 +59,7 @@ var conex = sql.connect(_dbconex);
 
 //---------------------- pruebas
 app.get('/ping',
-    function(req, res) {
+    (req, res) => {
         //
         console.log('PONG');
         res.json({ resultado: "ok", datos: 'hola mundo' });
@@ -87,7 +87,6 @@ app.get('/ktp_empresas_get',
                 res.json({ resultado: 'ok', empresas: data });
             });
     });
-
 app.post('/ktp_rubros',
     function(req, res) {
         //
@@ -104,7 +103,6 @@ app.get('/ktp_rubros_get',
                 res.json({ resultado: 'ok', rubros: data });
             });
     });
-
 app.post('/ktp_marcas',
     function(req, res) {
         //
@@ -121,7 +119,6 @@ app.get('/ktp_marcas_get',
                 res.json({ resultado: 'ok', marcas: data });
             });
     });
-
 app.post('/ktp_superfamilias',
     function(req, res) {
         //
@@ -154,7 +151,6 @@ app.get('/ktp_familias_get',
                 res.json({ resultado: 'ok', familias: data });
             });
     });
-
 app.post('/ktp_variables',
     function(req, res) {
         //
@@ -164,7 +160,6 @@ app.post('/ktp_variables',
                 res.json({ resultado: 'ok', variables: data });
             });
     });
-
 // http://server:port/ktp_variables/:usr/:dato1/:dato2....
 app.get('ktp_variables_get/:cliente',
     function(req, res) {
@@ -173,7 +168,6 @@ app.get('ktp_variables_get/:cliente',
                 res.json({ resultado: 'ok', variables: data });
             });
     });
-
 //agregado 12/01/2019
 // se pasa parametro de empresa 11/03/2019
 app.post('/ktp_stock',
@@ -369,13 +363,7 @@ app.post('/encorr2',
         // 
         htmlBody = _correos.cotizcuerpo(xnombre, xnombrecli, empresa, xemailobs) + lineas + _correos.cotizfin();
         // 
-        respuestaCorreo = await _correos.enCo2(mailList, htmlBody, cfile, pathfile, empresa);
-        //
-        if (respuestaCorreo === true) {
-            res.json({ resultado: 'ok', numero: 'ENVIADO' });
-        } else {
-            res.json({ resultado: 'error', numero: 'Correo no se envió' });
-        }
+        await _correos.enCo2(res, mailList, htmlBody, cfile, pathfile, empresa);
         //
     });
 
@@ -780,8 +768,8 @@ app.post('/enviarDeuda',
         htmlBody = _correos.deudaHeader(cliente) + lineas + _correos.deudaFooter();
         let mailList = { cc: xCc, to: xTo };
         await _correos.enviarCorreo(mailList, htmlBody, '');
-        //
         res.json({ resultado: 'ok', numero: 'Enviado' });
+        //
     });
 
 const generateUUID = () => {
@@ -866,7 +854,7 @@ createExcelFile = (prefix, lista, imagenes, filename, fechaYMD) => {
         let prodImg;
         let imgPath;
 
-        // console.log('imagen ', path.join(CARPETA_IMGS, `${ prefix + imagen }.jpg`));
+        console.log('imagen ', path.join(CARPETA_IMGS, `${ prefix + imagen }.jpg`));
 
         try {
             imgPath = path.join(CARPETA_IMGS, `${ prefix + imagen }.jpg`);

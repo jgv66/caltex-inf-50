@@ -318,10 +318,20 @@ module.exports = {
 
     NVVPendientes: function(sql, body) {
         //  
-        var request = new sql.Request();
+        let query = '';
+        let fIni = body.fechaIncial || undefined;
+        let fFin = body.fechaFinal || undefined;
+        let estado = (body.estado === 0 ? '*' : (body.estado === 1 ? 'P' : 'C'));
         //
-        console.log(body);
-        return request.query("exec ksp_traeNVVPendientes '" + body.vendedor + "','" + body.empresa + "' ;")
+        if (fIni !== undefined && fFin !== undefined) {
+            query = `exec ksp_traeNVVPendientes '${body.vendedor}','${body.empresa}','${estado}','${fIni}','${fFin}' ;`;
+        } else {
+            query = `exec ksp_traeNVVPendientes '${body.vendedor}','${body.empresa}','${estado}','','' ;`;
+        }
+        console.log(query);
+        //
+        var request = new sql.Request();
+        return request.query(query)
             .then(function(results) {
                 return results.recordset;
             });
