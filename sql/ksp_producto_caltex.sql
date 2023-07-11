@@ -1,5 +1,5 @@
 
--- exec ksp_producto_caltex '14ID3GD0C3010','HIC','02';
+-- exec ksp_producto_caltex '24V101523B00','HIC','02';
 IF OBJECT_ID('ksp_producto_caltex', 'P') IS NOT NULL  
     DROP PROCEDURE ksp_producto_caltex;  
 GO  
@@ -38,7 +38,7 @@ BEGIN
     set @query +=         ' when exists ( select * from ktp_images_caltex as im where im.img = rtrim(PR.KOPRTE) ) then rtrim(PR.KOPRTE) ';
     set @query +=         ' when exists ( select * from ktp_images_caltex as im where im.img = rtrim(img.codigosincolor) ) then rtrim(img.codigosincolor) ';
     set @query +=         ' else ''no-img'' end ) as codigoimagen,';
-    set @query +=         'PR.NOKOPR AS descripcion,PR.UD01PR as unidad1, PR.RLUD as rtu,';
+    set @query +=         'rtrim(PR.NOKOPR) AS descripcion,PR.UD01PR as unidad1, PR.RLUD as rtu,';
     set @query +=         'COALESCE(BO.STFI1,0) as fisico_ud1,';
     set @query +=         'coalesce(BO.STOCNV1,  0) as pendiente_ud1,';
     set @query +=         'coalesce(BO.STOCNV1C, 0) as porllegar_ud1, coalesce(BO.STOCNV2C,0) as porllegar_ud2,';
@@ -47,19 +47,21 @@ BEGIN
     set @query +=         'BO.KOSU as sucursal,'+char(39)+@bodega+char(39)+' as bodega,( select TB.NOKOBO from TABBO AS TB with (nolock) where TB.KOBO='+char(39)+@bodega+char(39)+' ) as nombrebodega,';
     set @query +=         'L.PP01UD as precio ,round((L.PP01UD-(L.PP01UD*L.DTMA01UD/100)),0) as preciomayor ,L.DTMA01UD as descuentomax ,round(L.PP01UD*L.DTMA01UD/100,0) as dsctovalor ,';
     set @query +=         'upper((case when patindex(''%#%'',reverse(rtrim(L.EDTMA01UD)))>0 then substring(rtrim(L.EDTMA01UD), 1, len(rtrim(L.EDTMA01UD))-patindex(''%#%'',reverse(rtrim(L.EDTMA01UD)))) else rtrim(L.EDTMA01UD) end)) as ecu_max1, ';
-    set @query +=         'coalesce(MA.NOKOMR,'+char(39)+''+char(39)+') as marca,coalesce(SF.NOKOFM,'+char(39)+''+char(39)+') as superfam,';
+    set @query +=         'coalesce(rtrim(MA.NOKOMR),'+char(39)+''+char(39)+') as marca,coalesce(rtrim(SF.NOKOFM),'+char(39)+''+char(39)+') as superfam,';
     set @query +=         '(case when TL.MELT='+char(39)+@letraN+char(39)+' then '+char(39)+@neto+char(39)+' else '+char(39)+@bruto+char(39)+' end) as tipolista,TL.MELT as metodolista,'+char(39)+@listapre+char(39)+' as listaprecio, ';
-    set @query +=         'cast(0 as decimal(18,3)) as metros, ';
-    set @query +=         'cast(0 as decimal(18,3)) as rollos, ';
-    set @query +=         'cast(0 as decimal(18,3)) as precioxmetro ';
-    set @query += 'FROM MAEPR         AS PR  WITH (NOLOCK) ';
-    set @query += 'inner join MAEPREM AS ME  WITH (NOLOCK) on PR.KOPR=ME.KOPR and ME.EMPRESA='+char(39)+@empresa+char(39)+' ';
-    set @query += 'inner join images  AS img WITH (NOLOCK) on PR.KOPR=img.KOPR ';
-    set @query += 'left  join MAEST   AS BO  WITH (NOLOCK) on BO.KOBO='+char(39)+@bodega+char(39)+' AND BO.KOPR = PR.KOPR ';
-    set @query += 'left  join TABPRE  AS L   with (nolock) on L.KOLT='+char(39)+@listapre+char(39)+' AND L.KOPR=PR.KOPR ';
-    set @query += 'left  join TABPP   AS TL  with (nolock) on L.KOLT=TL.KOLT ';
-    set @query += 'left  join TABMR   AS MA  with (nolock) on MA.KOMR=PR.MRPR ';
-    set @query += 'left  join TABFM   AS SF  with (nolock) on SF.KOFM=PR.FMPR ';
+    set @query +=         'cast(0 as decimal(18,3)) as metros,';
+    set @query +=         'cast(0 as decimal(18,3)) as rollos,';
+    set @query +=         'cast(0 as decimal(18,3)) as precioxmetro,';
+    set @query +=         'OBS.MENSAJE03 as curva ';
+    set @query += 'FROM MAEPR          AS PR  WITH (NOLOCK) ';
+    set @query += 'inner join MAEPREM  AS ME  WITH (NOLOCK) on PR.KOPR=ME.KOPR and ME.EMPRESA='+char(39)+@empresa+char(39)+' ';
+    set @query += 'left  join MAEPROBS AS OBS WITH (NOLOCK) on PR.KOPR=OBS.KOPR ';
+    set @query += 'left  join images   AS img WITH (NOLOCK) on PR.KOPR=img.KOPR ';
+    set @query += 'left  join MAEST    AS BO  WITH (NOLOCK) on BO.KOBO='+char(39)+@bodega+char(39)+' AND BO.KOPR = PR.KOPR ';
+    set @query += 'left  join TABPRE   AS L   with (nolock) on L.KOLT='+char(39)+@listapre+char(39)+' AND L.KOPR=PR.KOPR ';
+    set @query += 'left  join TABPP    AS TL  with (nolock) on L.KOLT=TL.KOLT ';
+    set @query += 'left  join TABMR    AS MA  with (nolock) on MA.KOMR=PR.MRPR ';
+    set @query += 'left  join TABFM    AS SF  with (nolock) on SF.KOFM=PR.FMPR ';
 	--
 	set @query = concat( @query, ' WHERE PR.KOPR=', char(39)+RTRIM(@codproducto)+char(39) ); 
 	--print @query

@@ -815,7 +815,7 @@ createExcelFile = (prefix, lista, imagenes, filename, fechaYMD) => {
     worksheet.getColumn('J').width = 12.57;
 
     worksheet.mergeCells('A8:C8');
-    worksheet.getRow(08).alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getRow(8).alignment = { vertical: 'middle', horizontal: 'center' };
     worksheet.getCell('A08').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'A6A6A6' } };
     worksheet.getCell('A08').value = "";
     worksheet.getCell('B08').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'A6A6A6' } };
@@ -831,9 +831,9 @@ createExcelFile = (prefix, lista, imagenes, filename, fechaYMD) => {
     worksheet.getCell('G08').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'A6A6A6' } };
     worksheet.getCell('G08').value = "Neto Unit.";
     worksheet.getCell('H08').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'A6A6A6' } };
-    worksheet.getCell('H08').value = "Curva";
+    worksheet.getCell('H08').value = "Pares";
     worksheet.getCell('I08').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'A6A6A6' } };
-    worksheet.getCell('I08').value = "Distribución (mensaje3)";
+    worksheet.getCell('I08').value = "Distribución";
     worksheet.getCell('J08').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'A6A6A6' } };
     worksheet.getCell('J08').value = "Saldo Tareas";
 
