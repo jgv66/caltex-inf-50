@@ -32,6 +32,7 @@ BEGIN
             ,C.EMPRESA as empresa
 			, C.EMPRESA
 			, CO.RAZON AS razonsocial
+			, CO.NCORTO AS ncorto
 			, SU.NOKOSU as nombresuc
 			, BO.NOKOBO as nombrebod
 			, LI.NOKOLT as nombrelista, 

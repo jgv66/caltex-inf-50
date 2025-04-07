@@ -30,5 +30,12 @@ npm-debug.log*
 /plugins
 /www
 
+/caltex_server_8125/logs
+/caltex_server_8125/node_modules
+/caltex_server_8125/.env
+/caltex_server_8125/.env.example
+/caltex_server_8125/.git
+/caltex_server_8125/.gitignore
+
 # claves de mail-gun
 mailgun.key

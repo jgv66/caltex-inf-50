@@ -1,24 +1,24 @@
 // console.log("hola mundo");
-let express = require('express');
-let app = express();
+const express = require('express');
+const app = express();
 // tto asincrono para grabaciones
-let async = require("async");
+const async = require("async");
 // configuracion
-let _dbconex = require('./conexion_mssql.js');
-let _configuracion = require('./configuracion_cliente.js');
-let _correos = require('./k_sendmail.js');
-let _elmail = require('./k_traemail.js');
-let _lasEmpresas = require('./k_empresas.js');
-let _funciones = require('./k_funciones.js');
-let _Activity = require('./k_regactiv.js');
+const _dbconex = require('./conexion_mssql.js');
+const _configuracion = require('./configuracion_cliente.js');
+const _correos = require('./k_sendmail.js');
+const _elmail = require('./k_traemail.js');
+const _lasEmpresas = require('./k_empresas.js');
+const _funciones = require('./k_funciones.js');
+const _Activity = require('./k_regactiv.js');
 // exportar a excel
-let fs = require('fs');
-let excel_tto = require('./k_excel_gen');
-let request = require('request');
-let path = require('path');
+const fs = require('fs');
+const excel_tto = require('./k_excel_gen');
+// const request = require('request');
+const path = require('path');
 //
-let Excel = require('exceljs');
-let fileExist = require('file-exists');
+const Excel = require('exceljs');
+const fileExist = require('file-exists');
 //
 var uuid = 0;
 //
@@ -360,11 +360,16 @@ app.post('/encorr2',
         //
         fs.writeFileSync(pathfile + '/' + cfile, header + rows);
         var xxxx = fs.readFileSync(pathfile + '/' + cfile);
-        data_txt = new Buffer(xxxx).toString();
+        data_txt = new Buffer.from(xxxx).toString();
         // 
         htmlBody = _correos.cotizcuerpo(xnombre, xnombrecli, empresa, xemailobs) + lineas + _correos.cotizfin();
         // 
-        await _correos.enCo2(res, mailList, htmlBody, cfile, pathfile, empresa);
+        try {
+            const respuesta = await _correos.enCo2(mailList, htmlBody, cfile, pathfile, empresa);
+            res.json({ resultado: 'ok', numero: 'ENVIADO' });
+        } catch (error) {
+            res.json({ resultado: 'error', numero: 'Correo no se envió' });
+        }
         //
     });
 
@@ -399,10 +404,10 @@ app.post('/grabadocumentos',
         let carroConCompras = [],
             nrocon, nrosin;
         // 
-        _elmail.delVendedorMas(sql, carro[0].vendedor).then(data => { xDatosVendedor = data; });
-        _elmail.delClienteMas(sql, carro[0].cliente, carro[0].suc_cliente).then(data => { xDatosCliente = data; });
+        await _elmail.delVendedorMas(sql, carro[0].vendedor).then(data => { xDatosVendedor = data; });
+        await _elmail.delClienteMas(sql, carro[0].cliente, carro[0].suc_cliente).then(data => { xDatosCliente = data; });
         // 
-        _Activity.registra(sql, carro[0].vendedor, 'grabadocumentos', tipodoc);
+        await _Activity.registra(sql, carro[0].vendedor, 'grabadocumentos', tipodoc);
         //
         carroConCompras = carro;
         //
@@ -467,10 +472,13 @@ app.post('/grabadocumentos',
                                                 }
                                             });
                                             htmlBody = _correos.primeraParte(xObs, rs.recordset[0].numero, xOcc, xDatosVendedor, xDatosCliente) + lineas + _correos.segundaParte();
-                                            mailList = { cc: xDatosVendedor.correo, to: xDatosCliente.correo };
-                                            // console.log('mailList->', mailList);
-                                            respuestaCorreo = await _correos.enviarCorreo(mailList, htmlBody, empresa);
-                                            error = (respuestaCorreo === false ? 'Correo no se envió' : undefined);
+                                            mailList = { cc: xDatosVendedor.correo, to: xDatosCliente.correo || xDatosVendedor.correo };
+                                            console.log('mailList->', mailList);
+                                            _correos.enviarCorreo(mailList, htmlBody, empresa)
+                                                .then(resp => {
+                                                    respuestaCorreo = resp;
+                                                    error = (!respuestaCorreo ? 'Correo no se envió' : undefined);
+                                                });
                                         });
                                     callback();
                                 })
@@ -726,7 +734,8 @@ app.post('/ktp_stock_excel',
                     .then(async() => {
                         if (fileExist.sync(filename)) {
                             console.log('archivo existe ', filename);
-                            await _correos.enviarCorreoExcel(res, mailList, filename);
+                            _correos.enviarCorreoExcel(res, mailList, filename)
+                                .then(() => console);
                         }
                     })
                     .catch(e => console.log(e));
@@ -768,9 +777,11 @@ app.post('/enviarDeuda',
         });
         htmlBody = _correos.deudaHeader(cliente) + lineas + _correos.deudaFooter();
         let mailList = { cc: xCc, to: xTo };
-        await _correos.enviarCorreo(mailList, htmlBody, '');
-        res.json({ resultado: 'ok', numero: 'Enviado' });
-        //
+        _correos.enviarCorreo(mailList, htmlBody, '')
+            .then(() => {
+                res.json({ resultado: 'ok', numero: 'Enviado' });
+            })
+            //
     });
 
 const generateUUID = () => {

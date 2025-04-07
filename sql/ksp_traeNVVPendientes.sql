@@ -2,6 +2,9 @@
 -- exec ksp_traeNVVPendientes 'JJG','02', '*','2021-07-01', '2021-07-31';
 -- exec ksp_traeNVVPendientes 'JJG','02', 'P','2021-07-01', '2021-07-31';
 -- exec ksp_traeNVVPendientes 'JJG','02', 'C','2021-07-01', '2021-07-31';
+-- exec ksp_traeNVVPendientes 'NRP','02','C','','' ;
+-- exec ksp_traeNVVPendientes 'AJS','02','C','','' ;
+
 IF OBJECT_ID('ksp_traeNVVPendientes', 'P') IS NOT NULL  
     DROP PROCEDURE ksp_traeNVVPendientes;  
 GO

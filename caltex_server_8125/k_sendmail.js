@@ -4,104 +4,70 @@ const fs = require('fs');
 const claves = require('./mailgun.key');
 const DOMAIN = claves.DOMAIN;
 const api_key = claves.API_KEY;
-//
-// const mailgun = require("mailgun-js")({ apiKey: api_key, domain: DOMAIN });
-const nodemailer = require('nodemailer'); // email sender function 
+// nelson@grupocaltex.cl
 
 // configuracion de mail-gun
 const SENDER_INTERNO = claves.SENDER;
-const COPIA_INTERNA = 'lsalinas@grupocaltex.cl';
+const COPIA_INTERNA = 'ktk@grupocaltex.cl';  // 'lsalinas@grupocaltex.cl' // 'nelson@grupocaltex.cl';
 const COPIA_TELAS = 'acuminao@grupocaltex.cl';
 //
-module.exports = {
-    // cada funncion se separa por comas  
-    enviarCorreo: (mailList, htmlBody, empresa) => {
-        // si 'to' viene vacio
-        if (mailList.to === '') {
-            mailList.to = ((mailList.cc !== '') ? mailList.cc : COPIA_INTERNA);
-        }
-        const cSu = (empresa === '04') ? 'Información de Pre-Venta' : 'Cotización Grupo Caltex';
-        //
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
+const mailgun = require("mailgun-js");
+const mg = mailgun({ apiKey: claves.API_KEY, domain: claves.DOMAIN });
+//
 
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
-            auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
-            },
-            debug: false, // show debug output
-            logger: false // log information in console
-        });
-        // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
+module.exports = {
+    // cada funncion se separa por comas
+    enviarCorreo: (mailList, htmlBody, empresa) => {
+        //
+        const data = {
+            from: "GrupoCaltex <grupocaltex.cl@n.kinetik.cl>",
             to: mailList.to,
-            // cc: cCc, // 'jogv66@gmail.com',
-            cc: [{ address: COPIA_INTERNA }, mailList.cc],
-            subject: cSu,
+            cc: (empresa === '04') ? [mailList.cc, COPIA_TELAS] : [mailList.cc, COPIA_INTERNA],
+            subject: (empresa === '04') ? 'Información de Pre-Venta' : 'Cotización Grupo Caltex',
             html: htmlBody
         };
-        // enviar el correo
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log('error en sendmail->', error);
-                return false;
-            } else {
-                console.log("Email enviado a -> ", mailList.to);
-                console.log("Email con copia -> ", ((mailList.cc !== '') ? mailList.cc : COPIA_INTERNA));
-                return true;
-            }
-        });
-        // 
+        // console.log(data);
+        return new Promise((resolve, reject) => {
+            // enviar el correo
+            mg.messages().send(data, function(error, body) {
+                console.log(body);
+                if (error) {
+                    console.log('error en sendmail->', error);
+                    reject(error);
+                } else {
+                    console.log("Email enviado a -> ", mailList.to);
+                    resolve(body);
+                }
+            });
+        })
     },
-
-    enCo2: function(res, mailList, htmlBody, cfile, pathfile, empresa) {
-        // console.log('mailList->', mailList);
-        //
-        cSu = (empresa === '04') ? 'Detalle de Pre-Venta' : 'Cotización Grupo Caltex';
-        cTo = mailList.to;
-        cCc = mailList.cc;
-        //
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
-            auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
-            },
-            debug: false, // show debug output
-            logger: false // log information in console
-        });
+    enCo2: (mailList, htmlBody, cfile, pathfile, empresa) => {
         // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
-            to: cTo,
-            cc: (empresa === '04') ? [cCc, { address: COPIA_TELAS }] : [cCc, { address: COPIA_INTERNA }],
-            subject: cSu,
+        const data = {
+            from: "GrupoCaltex <grupocaltex.cl@n.kinetik.cl>",
+            to: mailList.to,
+            cc: (empresa === '04') ? [mailList.cc, COPIA_TELAS] : [mailList.cc, COPIA_INTERNA],
+            subject: (empresa === '04') ? 'Detalle de Pre-Venta' : 'Cotización Grupo Caltex',
             html: htmlBody,
             attachments: [{ filename: cfile, path: pathfile + '/' + cfile }]
         };
         // enviar el correo
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log('error en sendmail->', error);
-                res.json({ resultado: 'error', numero: 'Correo no se envió' });
-                return;
-            } else {
-                console.log("Email enviado a -> ", cTo);
-                console.log("Email con copia -> ", cCc);
-                res.json({ resultado: 'ok', numero: 'ENVIADO' });
-                return;
-            }
-        });
-        // 
+        return new Promise((resolve, reject) => {
+                // enviar el correo
+                mg.messages().send(data, function(error, body) {
+                    console.log(body);
+                    if (error) {
+                        console.log('error en sendmail->', error);
+                        reject(error);
+                    } else {
+                        console.log("Email enviado a -> ", mailList.to);
+                        console.log("Email con copia -> ", (empresa === '04') ? [mailList.cc, COPIA_TELAS] : [mailList.cc, COPIA_INTERNA]);
+                        resolve(body);
+                    }
+                });
+            })
+            //
     },
-
     enviarCorreoExcel: (res, mailList, cfile) => {
         //
         const xhoy = new Date();
@@ -111,50 +77,31 @@ module.exports = {
         const hora = xhoy.getHours().toString();
         const minu = xhoy.getMinutes().toString();
         //
-        // si no tiene correo se envia al vendedor
-        if (mailList.emailTo === '' || mailList.emailTo == undefined) {
-            mailList.emailTo = mailList.emailCc;
-        }
-
-        // datos del enviador
-        const transporter = nodemailer.createTransport({
-            host: claves.HOST,
-            port: claves.PORT,
-            secure: true, // true for 465, false for other ports
-            auth: {
-                user: claves.SENDER,
-                pass: claves.PWD
-            },
-            debug: false, // show debug output
-            logger: false // log information in console
-        });
-        // opciones del correo
-        const mailOptions = {
-            from: { name: "GrupoCaltex", address: claves.SENDER },
+        const data = {
+            from: "GrupoCaltex <grupocaltex.cl@n.kinetik.cl>",
             to: mailList.emailTo,
             cc: (mailList.emailCc !== '' && mailList.emailCc !== undefined && mailList.emailCc !== 'undefined') ? mailList.emailCc : undefined,
             subject: 'Planillas de Stock al ' + dia + '-' + mes + '-' + anno,
             html: 'Adjunto Planilla de Stock al <b>' + dia + '-' + mes + '-' + anno + ' - ' + hora + ':' + minu + ' horas</b><br>Comentarios: ' + mailList.nombreCli,
             attachments: [{ filename: cfile, path: cfile }]
         };
-        // enviar el correo
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.log('error en sendmail->', error);
-                res.json({ resultado: 'error', numero: 'NO Enviado' });
-                return;
-            } else {
-                console.log("Email enviado a -> ", mailList.emailTo);
-                console.log("Email con copia -> ", ((mailList.emailCc !== '' && mailList.emailCc !== undefined && mailList.emailCc !== 'undefined') ? mailList.emailCc : undefined));
-                res.json({ resultado: 'ok', numero: 'Enviado' });
-                return;
-            }
-        });
-        // 
+        return new Promise((resolve, reject) => {
+                // enviar el correo
+                mg.messages().send(data, function(error, body) {
+                    console.log(body);
+                    if (error) {
+                        console.log('error en sendmail->', error);
+                        reject(error);
+                    } else {
+                        console.log("Email enviado a -> ", cTo);
+                        resolve(body);
+                    }
+                });
+            })
+            // ----------------------------------------------------------------------------------------------------------------
     },
-
     componeBody: function(sql, id) {
-        //  
+        //
         var request = new sql.Request();
         request.input('id', sql.Int, id);
         return request.execute("ksp_TraeDetalleK");
@@ -164,11 +111,11 @@ module.exports = {
         return `
       <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
       <html xmlns="http://www.w3.org/1999/xhtml">
-      
+
       <head>
           <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
           <meta name="viewport" content="width=device-width" />
-      
+
           <style type="text/css">
               * { margin: 0;  padding: 0; font-size: 100%; font-family: 'Avenir Next', "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif; line-height: 1.65; }
               img { max-width: 100%;  margin: 0 auto; display: block; }
@@ -195,12 +142,12 @@ module.exports = {
               .container .content.footer a { color: #888; text-decoration: none; font-weight: bold; }
           </style>
       </head>
-      
+
       <body>
           <table class="body-wrap">
               <tr>
                   <td class="container">
-      
+
                       <!-- Message start -->
                       <table>
                           <tr>
@@ -269,11 +216,11 @@ module.exports = {
         return `
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml">
-    
+
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name="viewport" content="width=device-width" />
-    
+
         <style type="text/css">
             * { margin: 0;  padding: 0; font-size: 100%; font-family: 'Avenir Next', "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif; line-height: 1.65; }
             img { max-width: 100%;  margin: 0 auto; display: block; }
@@ -300,12 +247,12 @@ module.exports = {
             .container .content.footer a { color: #888; text-decoration: none; font-weight: bold; }
         </style>
     </head>
-    
+
     <body>
         <table class="body-wrap">
             <tr>
                 <td class="container">
-    
+
                     <!-- Message start -->
                     <table>
                         <tr>
@@ -363,11 +310,11 @@ module.exports = {
         return `
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml">
-    
+
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name="viewport" content="width=device-width" />
-    
+
         <style type="text/css">
             * { margin: 0;  padding: 0; font-size: 100%; font-family: 'Avenir Next', "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif; line-height: 1.65; }
             img { max-width: 100%;  margin: 0 auto; display: block; }
@@ -394,12 +341,12 @@ module.exports = {
             .container .content.footer a { color: #888; text-decoration: none; font-weight: bold; }
         </style>
     </head>
-    
+
     <body>
         <table class="body-wrap">
             <tr>
                 <td class="container">
-    
+
                     <!-- Message start -->
                     <table>
                         <tr>
@@ -423,7 +370,6 @@ module.exports = {
                                   <table border="1">
                                   ` + (empresa === '04' ? '<tr><td align="center">Documento</td><td align="center">Folio</td><td align="center">Emision</td><td align="center">Vencimiento</td><td align="center">Monto</td><td align="center">Abonos</td></tr>' : '<tr><td align="center">Imagen (150x150)</td><td align="center">Código Interno</td><td align="center">Cód.Técnico</td><td align="center">Descripción</td><td align="center">Precio Unit.</td><td align="center">Curva</td></tr>');
     },
-
 };
 
 eliminarArchivo = (filename) => {

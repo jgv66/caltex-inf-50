@@ -1,0 +1,24 @@
+{
+  "name": "e-Ruido",
+  "version": "0.7.1",
+  "description": "Alertas eRuido.org",
+  "main": "k_eruido_server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "kinetik.cl",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^3.2.5",
+    "dotenv": "^16.3.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "file-exists": "^5.0.1",
+    "fs": "^0.0.1-security",
+    "mailgun-js": "^0.22.0",
+    "mssql": "^9.1.1",
+    "multer": "^1.4.5-lts.1",
+    "web-push": "^3.6.3"
+  }
+}

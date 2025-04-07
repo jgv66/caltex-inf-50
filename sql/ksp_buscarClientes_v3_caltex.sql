@@ -25,13 +25,14 @@ BEGIN
 	if ( @usuario in ('HIC') ) begin 
 		set @filtrovendedor = '';
 	end;
-	-- 
+	--
+   
     set @query   = 'select top 30 rtrim(EN.KOEN) as codigo,rtrim(EN.SUEN) AS sucursal, rtrim(EN.NOKOEN) as razonsocial,rtrim(EN.DIEN) as direccion,';
-	set @query	+=				 'rtrim(cast(cast(EN.RTEN as int) as varchar(8)))+''-''+dbo.kfn_digitoVerificador(cast(RTEN as int )) as rut,';
-    set @query  +=               'EN.KOFUEN as vendedor, PP.KOLT as listaprecio,';
-    set @query  +=               'rtrim(FU.NOKOFU) as nombrevendedor, rtrim(PP.NOKOLT) as nombrelista,';
-    set @query  +=               'rtrim(CI.NOKOCI) as ciudad, rtrim(CM.NOKOCM) as comuna, rtrim(EN.EMAILCOMER) as email,rtrim(EN.FOEN) as telefonos,';
-    set @query  +=               '( case when EN.TIPOSUC='+char(39)+'S'+char(39)+' then '+char(39)+'suc'+char(39)+' else '+char(39)+char(39)+' end ) as tiposuc ';
+	  set @query	+=				 'case when isnumeric(EN.RTEN)=1 then rtrim(cast(cast(EN.RTEN as int) as varchar(8)))+''-''+dbo.kfn_digitoVerificador(cast(RTEN as int )) else EN.RTEN end as rut,';
+    set @query  +=         'EN.KOFUEN as vendedor, PP.KOLT as listaprecio,';
+    set @query  +=         'rtrim(FU.NOKOFU) as nombrevendedor, rtrim(PP.NOKOLT) as nombrelista,';
+    set @query  +=         'rtrim(CI.NOKOCI) as ciudad, rtrim(CM.NOKOCM) as comuna, rtrim(EN.EMAILCOMER) as email,rtrim(EN.FOEN) as telefonos,';
+    set @query  +=         '( case when EN.TIPOSUC='+char(39)+'S'+char(39)+' then '+char(39)+'suc'+char(39)+' else '+char(39)+char(39)+' end ) as tiposuc ';
     set @query  += 'FROM MAEEN AS EN WITH (NOLOCK) ';
     set @query  += 'left join TABFU as FU with (nolock) on FU.KOFU=EN.KOFUEN ';
     set @query  += 'left join TABPP as PP with (nolock) on '+char(39)+'TABPP'+char(39)+'+PP.KOLT=EN.LVEN ';
